@@ -16,9 +16,10 @@ setup(
         'gpflow==2.5.2',
         'numpy',
         'pandas',
+        'rpy2==3.4.5',
         'scipy',
         'tensorflow',
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     zip_safe=False
 )
