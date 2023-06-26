@@ -4,9 +4,9 @@ import os
 import pandas as pd
 from scipy.stats import multivariate_normal
 
-from helpers.array_operations import to_correlation_structure
-from helpers.data import to_3d_format
-from helpers.filtering import highpass_filter_data
+from ..helpers.array_operations import to_correlation_structure
+from ..helpers.data import to_3d_format
+from ..helpers.filtering import highpass_filter_data
 
 
 class SlidingWindows:

@@ -10,8 +10,8 @@ from rpy2.robjects.conversion import localconverter
 
 import fcest
 
-from helpers.array_operations import to_correlation_structure
-from helpers.data import to_3d_format
+from ..helpers.array_operations import to_correlation_structure
+from ..helpers.data import to_3d_format
 
 
 class MGARCH:
