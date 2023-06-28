@@ -8,13 +8,12 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.conversion import localconverter
 
-import fcest
-
 from ..helpers.array_operations import to_correlation_structure
 from ..helpers.data import to_3d_format
 
 
 class MGARCH:
+    """MGARCH base class."""
 
     def __init__(self, mgarch_type: str):
         """

@@ -1,5 +1,7 @@
 import numpy as np
 
+__all__ = ["to_3d_format"]
+
 
 def to_3d_format(r_formatted_array: np.array) -> np.array:
     """

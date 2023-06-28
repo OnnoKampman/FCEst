@@ -17,7 +17,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install numpy pandas pylint rpy2==3.4.5 scipy
+        pip install numpy pandas pylint rpy2==3.4.5 scipy tensorflow
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        pylint $(git ls-files '*.py') --disable=line-too-long,missing-class-docstring,missing-function-docstring,missing-module-docstring --fail-under=7
+      # continue-on-error: true

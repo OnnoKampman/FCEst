@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.signal import butter, filtfilt
 
+__all__ = ["highpass_filter_data", "butter_highpass_filter", "_butter_highpass", "_compute_lower_frequency_cutoff"]
+
 
 def highpass_filter_data(y_observed: np.array, window_length: int, repetition_time: float):
     """
