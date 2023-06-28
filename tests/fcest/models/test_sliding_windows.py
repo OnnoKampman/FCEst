@@ -1,7 +1,8 @@
 import logging
+import unittest
+
 import numpy as np
 from numpy.testing import assert_array_equal
-import unittest
 
 from fcest.models.sliding_windows import SlidingWindows
 
@@ -13,6 +14,7 @@ logging.basicConfig(
 
 
 class TestSlidingWindows(unittest.TestCase):
+    """Test the SlidingWindows class."""
 
     def test_static_covariance_estimate_bivariate(self):
         y_test = np.array([

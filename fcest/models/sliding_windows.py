@@ -1,6 +1,7 @@
 import logging
-import numpy as np
 import os
+
+import numpy as np
 import pandas as pd
 from scipy.stats import multivariate_normal
 

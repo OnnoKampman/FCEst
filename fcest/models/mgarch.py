@@ -13,6 +13,7 @@ from ..helpers.data import to_3d_format
 
 
 class MGARCH:
+    """MGARCH base class."""
 
     def __init__(self, mgarch_type: str):
         """
