@@ -1,5 +1,7 @@
 import numpy as np
 
+__all__ = ["to_correlation_structure", "_correlation_from_covariance"]
+
 
 def to_correlation_structure(covariance_structure: np.array) -> np.array:
     """
