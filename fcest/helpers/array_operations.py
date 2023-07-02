@@ -1,6 +1,14 @@
-import numpy as np
+import logging
 
-__all__ = ["to_correlation_structure", "_correlation_from_covariance"]
+import numpy as np
+import tensorflow as tf
+
+__all__ = [
+    "to_correlation_structure", 
+    "_correlation_from_covariance",
+    "convert_tensor_to_correlation",
+    "are_all_positive_definite",
+]
 
 
 def to_correlation_structure(covariance_structure: np.array) -> np.array:
@@ -25,3 +33,36 @@ def _correlation_from_covariance(covariance_matrix: np.array) -> np.array:
     correlation_matrix = covariance_matrix / outer_v  # (D, D)
     correlation_matrix[covariance_matrix == 0] = 0
     return correlation_matrix
+
+
+def convert_tensor_to_correlation(covariance_matrix: tf.Tensor) -> tf.Tensor:
+    """
+    Convert covariance tensor to correlation tensor.
+    :param covariance_matrix:
+    :return:
+    """
+    diag_covs = tf.linalg.diag_part(covariance_matrix)
+    diag_covs = tf.expand_dims(diag_covs, axis=-1)
+    diag_covs_outer = tf.matmul(diag_covs, diag_covs, transpose_b=True)
+    diag_covs_outer = tf.math.sqrt(diag_covs_outer)
+    correlation_matrix = covariance_matrix / diag_covs_outer
+    return correlation_matrix
+
+
+def are_all_positive_definite(covariance_matrices):
+    for covariance_matrix in covariance_matrices:
+        # check covariance matrix predictions are symmetric
+        if not np.allclose(
+            (covariance_matrix.numpy() - covariance_matrix.numpy().T), 0, rtol=1e-6
+        ):
+            logging.warning('Matrix is not symmetric.')
+            print(covariance_matrix)
+            return False
+        # check if positive definite
+        try:
+            _ = np.linalg.cholesky(covariance_matrix)
+            continue
+        except np.linalg.LinAlgError as e:
+            print(e)
+            return False
+    return True
