@@ -5,11 +5,18 @@
 
 from setuptools import find_packages, setup
 
+
+def read_file(filename: str) -> str:
+    with open(filename, encoding="utf-8") as f:
+        return f.read().strip()
+
+
 packages = find_packages(".", exclude=["tests"])
+version = read_file("VERSION")
 
 setup(
     name='fcest',
-    version='0.0.1',
+    version=version,
     author='Onno P. Kampman',
     author_email='onno.kampman@gmail.com',
     description='Methods for estimation of functional connectivity',
