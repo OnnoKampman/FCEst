@@ -1,9 +1,14 @@
 name: Pytest
 
-on: [push]
+# Run only on pushes to main branch and to pull requests into main branch.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,6 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r test_requirements.txt
         #   pip install -e .
+    # Coverage report is both printed to the console and saved as an XML file.
       - name: Run unit tests
         run: |
-          python -m pytest --cov=./fcest --cov-report=xml --import-mode=append ./tests
+          python -m pytest --cov=./fcest --cov-report=term --cov-report=xml --import-mode=append ./tests
