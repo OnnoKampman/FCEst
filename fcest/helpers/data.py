@@ -1,6 +1,16 @@
 import numpy as np
 
-__all__ = ["to_3d_format"]
+__all__ = [
+    "to_2d_format",
+    "to_3d_format",
+]
+
+
+def to_2d_format(three_dimensional_cov_matrices_array: np.array) -> np.array:
+    """Convert estimates to 2D array to save it to disk."""
+    return three_dimensional_cov_matrices_array.reshape(
+        len(three_dimensional_cov_matrices_array), -1
+    ).T  # (D*D, N)
 
 
 def to_3d_format(r_formatted_array: np.array) -> np.array:

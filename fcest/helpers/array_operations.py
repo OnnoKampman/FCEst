@@ -49,20 +49,23 @@ def convert_tensor_to_correlation(covariance_matrix: tf.Tensor) -> tf.Tensor:
     return correlation_matrix
 
 
-def are_all_positive_definite(covariance_matrices):
-    for covariance_matrix in covariance_matrices:
+def are_all_positive_definite(covariance_matrices: tf.Tensor) -> bool:
+    """Checks if collection of covariance matrices are all positive definite."""
+    for covariance_matrix_tensor in covariance_matrices:
         # check covariance matrix predictions are symmetric
         if not np.allclose(
-            (covariance_matrix.numpy() - covariance_matrix.numpy().T), 0, rtol=1e-6
+            (covariance_matrix_tensor.numpy() - covariance_matrix_tensor.numpy().T),
+            0,
+            rtol=1e-6
         ):
             logging.warning('Matrix is not symmetric.')
-            print(covariance_matrix)
+            print(covariance_matrix_tensor)
             return False
         # check if positive definite
         try:
-            _ = np.linalg.cholesky(covariance_matrix)
+            _ = np.linalg.cholesky(covariance_matrix_tensor)
             continue
-        except np.linalg.LinAlgError as e:
-            print(e)
+        except np.linalg.LinAlgError as e_linalg:
+            print(e_linalg)
             return False
     return True

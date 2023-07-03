@@ -24,11 +24,13 @@ class TestSlidingWindows(unittest.TestCase):
         ])  # (N, D)
         n_time_steps = y_test.shape[0]
         x_test = np.linspace(0, 1, n_time_steps)
-        sw = SlidingWindows(
+        sliding_windows = SlidingWindows(
             x_train_locations=x_test,
             y_train_locations=y_test
         )
-        cov_estimates = sw.estimate_static_functional_connectivity(connectivity_metric='covariance')
+        cov_estimates = sliding_windows.estimate_static_functional_connectivity(
+            connectivity_metric='covariance'
+        )
         true_cov = np.array([
             [1., -1.],
             [-1., 1.]
@@ -44,11 +46,13 @@ class TestSlidingWindows(unittest.TestCase):
         ])  # (N, D)
         n_time_steps = y_test.shape[0]
         x_test = np.linspace(0, 1, n_time_steps)
-        sw = SlidingWindows(
+        sliding_windows = SlidingWindows(
             x_train_locations=x_test,
             y_train_locations=y_test
         )
-        corr_estimates = sw.estimate_static_functional_connectivity(connectivity_metric='correlation')
+        corr_estimates = sliding_windows.estimate_static_functional_connectivity(
+            connectivity_metric='correlation'
+        )
         true_corr = np.array([
             [1., -1.],
             [-1., 1.]
@@ -64,11 +68,13 @@ class TestSlidingWindows(unittest.TestCase):
         ])  # (N, D)
         n_time_steps = y_test.shape[0]
         x_test = np.linspace(0, 1, n_time_steps)
-        sw = SlidingWindows(
+        sliding_windows = SlidingWindows(
             x_train_locations=x_test,
             y_train_locations=y_test
         )
-        cov_estimates = sw.estimate_static_functional_connectivity(connectivity_metric='covariance')
+        cov_estimates = sliding_windows.estimate_static_functional_connectivity(
+            connectivity_metric='covariance'
+        )
         true_cov = np.array([
             [1., -1., -1.],
             [-1., 1., 1.],
