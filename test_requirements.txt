@@ -3,6 +3,7 @@ numpy
 pandas
 pylint
 pytest
+pytest-cov
 rpy2==3.4.5
 scikit-learn
 scipy
