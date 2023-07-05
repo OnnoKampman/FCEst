@@ -50,15 +50,15 @@ class TestLikelihoods(unittest.TestCase):
 
         # Test different ways to compute the same tensor.
         affa_inverse = tf.linalg.inv(affa)  # (S, N, D, D)
-        yaffa_1 = tf.einsum('nd,snid->sni', y_data, affa_inverse)
+        yaffa_1 = tf.einsum('nd,snid->sni', y_data, affa_inverse)  # (S, N, D)
         yaffa_2 = tf.matmul(y_data, affa_inverse)  # (S, N, N, D)
-        yaffa_2 = tf.math.reduce_mean(yaffa_2, axis=2)
+        yaffa_2 = tf.math.reduce_mean(yaffa_2, axis=2)  # (S, N, D)
         assert_array_almost_equal(yaffa_1, yaffa_2)
 
         # Test different ways to compute the same tensor.
-        y_data_tiled = tf.tile(y_data[None, :, :, None], [n_mc_samples, 1, 1, 1])
         yaffay_1 = tf.matmul(yaffa_1, y_data, transpose_b=True)
         yaffay_1 = tf.math.reduce_mean(yaffay_1, axis=2)
+        y_data_tiled = tf.tile(y_data[None, :, :, None], [n_mc_samples, 1, 1, 1])  # (S, N, D, 1)
         L_solve_y = tf.linalg.triangular_solve(L, y_data_tiled, lower=True)
         yaffay_2 = tf.math.reduce_sum(L_solve_y ** 2, axis=(2, 3))
         assert_array_almost_equal(yaffay_1, yaffay_2)

@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+from numpy.testing import assert_array_almost_equal
 
 from fcest.helpers.array_operations import to_correlation_structure
 
@@ -12,7 +13,7 @@ class TestArrayOperations(unittest.TestCase):
         # test identical covariance and correlation structures
         test_covariance_structure = self._get_test_covariance_structure()
         test_correlation_structure = to_correlation_structure(test_covariance_structure)
-        self.assertEqual(test_correlation_structure, test_covariance_structure)
+        assert_array_almost_equal(test_correlation_structure, test_covariance_structure)
 
     @staticmethod
     def _get_test_covariance_structure() -> np.array:
