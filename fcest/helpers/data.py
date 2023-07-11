@@ -1,8 +1,10 @@
 import numpy as np
+import scipy.stats
 
 __all__ = [
     "to_2d_format",
     "to_3d_format",
+    "test_for_normality",
 ]
 
 
@@ -28,3 +30,13 @@ def to_3d_format(r_formatted_array: np.array) -> np.array:
     )
     three_dimensional_cov_matrices_array = np.transpose(three_dimensional_cov_matrices_array, (2, 1, 0))
     return three_dimensional_cov_matrices_array
+
+
+def test_for_normality(data_array: np.array) -> None:
+    """
+    Test for normality - a precondition for running t-tests.
+    """
+    k2, cohort_normality_pvalues = scipy.stats.normaltest(
+        data_array, axis=0, nan_policy='omit'
+    )
+    print(k2.shape, cohort_normality_pvalues.shape)
