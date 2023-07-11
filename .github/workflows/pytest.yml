@@ -26,6 +26,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r test_requirements.txt
+          sudo apt-get install libmpfr-dev libmpfr-doc libmpfr4 libmpfr4-dbg
           sudo Rscript -e 'install.packages("rmgarch", repos="https://cloud.r-project.org")'
         #   pip install -e .
     # Coverage report is both printed to the console and saved as an XML file.
