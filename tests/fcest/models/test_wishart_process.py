@@ -2,9 +2,7 @@ import logging
 import unittest
 
 import numpy as np
-import tensorflow as tf
 
-from fcest.helpers.array_operations import are_all_positive_definite
 from fcest.models.wishart_process import SparseVariationalWishartProcess, VariationalWishartProcess
 
 logging.basicConfig(
@@ -15,48 +13,6 @@ logging.basicConfig(
 
 
 class TestWishartProcess(unittest.TestCase):
-
-    def test_assert_positive_definite_not_symmetric(self):
-        matrices = [
-            [
-                [1.0, 0.1],
-                [0.2, 1.0]
-            ],
-            [
-                [1.0, 0.3],
-                [0.4, 1.0]
-            ]
-        ]
-        matrices = tf.constant(matrices, dtype=tf.dtypes.float64)
-        self.assertFalse(are_all_positive_definite(matrices))
-
-    def test_assert_positive_definite_symmetric_not_positive_definite(self):
-        matrices = [
-            [
-                [1.0, 2.1],
-                [2.1, 1.0]
-            ],
-            [
-                [1.0, 4.3],
-                [4.3, 1.0]
-            ]
-        ]
-        matrices = tf.constant(matrices, dtype=tf.dtypes.float64)
-        self.assertFalse(are_all_positive_definite(matrices))
-
-    def test_assert_positive_definite_symmetric_positive_definite(self):
-        matrices = [
-            [
-                [1.0, 0.1],
-                [0.1, 1.0]
-            ],
-            [
-                [1.0, 0.3],
-                [0.3, 1.0]
-            ]
-        ]
-        matrices = tf.constant(matrices, dtype=tf.dtypes.float64)
-        self.assertTrue(are_all_positive_definite(matrices))
 
     def test_sparse_variational_wishart_process(self):
         """Test instantiation of SparseVariationalWishartProcess."""
