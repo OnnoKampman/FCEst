@@ -1,9 +1,12 @@
 gpflow==2.5.2
+mpfr  # for installing R package 'rmgarch' on Ubuntu
 numpy
 pandas
 pylint
 pytest
 pytest-cov
+# r-base==4.1.0
+# r-gmp  # for installing R package 'rmgarch' on Ubuntu
 rpy2==3.4.5
 scikit-learn
 scipy
