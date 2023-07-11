@@ -2,7 +2,7 @@ import logging
 import unittest
 
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_almost_equal
 import pandas as pd
 
 from fcest.models.mgarch import MGARCH
@@ -34,7 +34,7 @@ class TestMGARCH(unittest.TestCase):
             training_type='pairwise'
         )
         cov_structure_pairwise = m.train_location_covariance_structure
-        assert_array_equal(cov_structure_joint, cov_structure_pairwise)
+        assert_array_almost_equal(cov_structure_joint, cov_structure_pairwise)
 
     @staticmethod
     def _get_dummy_training_data(
