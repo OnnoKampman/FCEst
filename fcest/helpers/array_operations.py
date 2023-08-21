@@ -8,6 +8,7 @@ __all__ = [
     "_correlation_from_covariance",
     "convert_tensor_to_correlation",
     "are_all_positive_definite",
+    "zscore_estimates",
 ]
 
 
@@ -52,7 +53,7 @@ def convert_tensor_to_correlation(covariance_matrix: tf.Tensor) -> tf.Tensor:
 def are_all_positive_definite(covariance_matrices: tf.Tensor) -> bool:
     """Checks if collection of covariance matrices are all positive definite."""
     for covariance_matrix_tensor in covariance_matrices:
-        # check covariance matrix predictions are symmetric
+        # check covariance matrix estimates are symmetric
         if not np.allclose(
             (covariance_matrix_tensor.numpy() - covariance_matrix_tensor.numpy().T),
             0,
@@ -69,3 +70,8 @@ def are_all_positive_definite(covariance_matrices: tf.Tensor) -> bool:
             print(e_linalg)
             return False
     return True
+
+
+def zscore_estimates(tvfc_estimates_array: np.array) -> np.array:
+    """Returns z-scored or standard-scored estimates."""
+    return tvfc_estimates_array - np.mean(tvfc_estimates_array) / np.std(tvfc_estimates_array)
