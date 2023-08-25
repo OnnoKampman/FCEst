@@ -12,8 +12,9 @@ from ..helpers.filtering import highpass_filter_data
 
 class SlidingWindows:
     """
-    Main class for sliding-windows methods.
+    Main class for sliding-windows methods for time-varying functional connectivity (TVFC) estimation.
     TODO: implement tapered sliding-windows (TSW)
+    TODO: implement partial correlation estimation on top of 'simple' estimation
     """
 
     def __init__(
@@ -46,11 +47,15 @@ class SlidingWindows:
         elif window_shape != 'rectangle':
             logging.error("Other window types not implemented yet.")
 
-    def estimate_static_functional_connectivity(self, connectivity_metric: str) -> np.array:
+    def estimate_static_functional_connectivity(
+            self, connectivity_metric: str, return_structure: bool = True
+    ) -> np.array:
         """
-        Static functional connectivity (sFC) estimate.
+        Static functional connectivity (sFC) structure estimate.
         :param connectivity_metric:
+        :param return_structure: if True, returns a covariance structure instead of matrix.
         :return:
+            covariance matrix array of shape (D, D), or;
             covariance structure array of shape (N_train, D, D).
         """
         match connectivity_metric:
@@ -60,8 +65,15 @@ class SlidingWindows:
                 sfc_estimate = np.corrcoef(self.y_train.T)  # (D, D)
             case _:
                 raise NotImplementedError(f"Connectivity metric {connectivity_metric:s} not recognized.")
-        sfc_estimate = np.tile(sfc_estimate, reps=(self.n_time_steps, 1, 1))  # (N, D, D)
-        assert len(sfc_estimate.shape) == 3
+        if return_structure:
+            sfc_estimate = np.tile(
+                sfc_estimate, reps=(self.n_time_steps, 1, 1)
+            )  # (N, D, D)
+            assert len(sfc_estimate.shape) == 3
+
+        # % convert corr_matrix to zmat for correlation with behaviour (standardised values)
+        # zcorr_matrix = .5.*log((1+corr_matrix)./(1-corr_matrix));  % calculate fisher z to average the runs
+
         return sfc_estimate
 
     def overlapping_windowed_cov_estimation(
@@ -73,8 +85,12 @@ class SlidingWindows:
         A step size of a single data point is common.
         Typical window lengths range from 30 seconds (15 measurements at TR = 2) to 60 seconds.
         TODO: plot frequency domain before and after filter
+
+        We apply high-pass filtering.
+        Band-pass filtering up to 0.08 Hz could be used too, mainly for resting-state data.
+
         :param window_length: number of observations in one window.
-            That is, this is measured in TRs (number of volumes).
+            That is, this is measured in TRs (number of volumes), not in seconds.
             Note: there is still some discussion over what a good window length is.
         :param step_size: number of observations the window is moved.
             Also referred to as window offset.
@@ -114,6 +130,23 @@ class SlidingWindows:
             estimated_tvfc = to_correlation_structure(estimated_tvfc)  # (N, D, D)
 
         return estimated_tvfc
+
+    def compute_cross_validated_optimal_window_length(
+            self, window_length_step_size: int = 2, eval_location_step_size: int = 1
+    ) -> int:
+        """
+        This is currently run for a single subject.
+        :param window_length_step_size: should be 2 to make sure the window length is always uneven (and thus symmetrical)
+        :param eval_location_step_size:
+        :return:
+            Optimal window length (integer of TRs).
+        """
+        results_df = self.find_cross_validated_optimal_window_length(
+            window_length_step_size=window_length_step_size,
+            eval_location_step_size=eval_location_step_size
+        )
+        optimal_window_length = self.get_optimal_window_length(results_df)
+        return optimal_window_length
 
     def find_cross_validated_optimal_window_length(
             self, window_length_step_size: int = 2, eval_location_step_size: int = 1
@@ -274,7 +307,7 @@ class SlidingWindows:
             cov_structure[y_subset_indices, :, :] = np.cov(y_subset.T)  # np.cov() accepts multivariate inputs
         return cov_structure
 
-    def save_model_predictions(
+    def save_tvfc_estimates(
             self, optimal_window_length: int, savedir: str, model_name: str,
             repetition_time: float = None, connectivity_metric: str = 'correlation'
     ) -> None:
@@ -302,7 +335,7 @@ class SlidingWindows:
         logging.info(f"Saved SW-CV model (train location) estimates to '{savedir:s}'.")
 
     @staticmethod
-    def load_model_predictions(
+    def load_tvfc_estimates(
             savedir: str, model_name: str
     ) -> np.array:
         """
