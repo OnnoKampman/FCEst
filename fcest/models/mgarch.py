@@ -15,29 +15,45 @@ from ..helpers.data import to_3d_format
 class MGARCH:
     """MGARCH base class."""
 
-    def __init__(self, mgarch_type: str):
+    def __init__(
+            self, mgarch_type: str,
+            uspec_mean_model: str = "c(1, 1)", 
+            uspec_variance_model: str = "c(1, 1)",
+            dccspec_order: str = "c(1, 1)"
+    ):
         """
         You will need to run `install.packages('rmgarch')` in your R console.
-        Inspired by https://quant.stackexchange.com/questions/20687/multivariate-garch-in-python
+
+        References
+            Inspired by https://quant.stackexchange.com/questions/20687/multivariate-garch-in-python
         :param mgarch_type: either 'DCC' or 'GO'.
         """
         match mgarch_type:
             case 'DCC':
-                self._define_r_code_model_dcc()
+                self._define_r_code_model_dcc(
+                    uspec_mean_model=uspec_mean_model,
+                    uspec_variance_model=uspec_variance_model,
+                    dccspec_order=dccspec_order
+                )
             case 'GO':
                 self._define_r_code_model_go()
             case _:
-                logging.error(f"MGARCH model type '{mgarch_type:s}' not recognized.")
+                raise NotImplementedError(f"MGARCH model type '{mgarch_type:s}' not recognized.")
 
     def _define_r_code_model_dcc(
-            self, spec_distribution: str = "mvt", fit_control: str = "FALSE"
+            self, uspec_mean_model: str, uspec_variance_model: str, dccspec_order: str,
+            spec_distribution: str = "mvt", fit_control: str = "FALSE"
     ) -> None:
         """
         Note that the double curly brackets are necessary for Python's f-strings.
-        For more inspiration: https://github.com/canlab/Lindquist_Dynamic_Correlation
-        Before ugarchspec's mean.model was c(1, 0), and the variance.model was not there.
-        :param spec_distribution: "mvt", "mvnorm"
+
+        References
+            For more inspiration: https://github.com/canlab/Lindquist_Dynamic_Correlation
+        :param spec_distribution: "mvt" or "mvnorm"
         :param fit_control: determines whether standard errors are computed
+        :param uspec_mean_model: used to be c(1, 0)
+        :param uspec_variance_model: this was not here before
+        :param dccspec_order: default is c(1, 1)
         """
         r_dcc_garch_code = f"""
             library('rugarch')
@@ -49,14 +65,14 @@ class MGARCH:
                     replicate(
                         n_time_series,
                         ugarchspec(
-                            mean.model = list(armaOrder = c(1, 1)),
-                            variance.model = list(garchOrder = c(1, 1))
+                            mean.model = list(armaOrder = {uspec_mean_model:s}),
+                            variance.model = list(garchOrder = {uspec_variance_model:s})
                         )
                     )
                 )
                 spec <- dccspec(
                     uspec,
-                    dccOrder = c(1, 1),  # this is the default option
+                    dccOrder = {dccspec_order:s},
                     distribution = "{spec_distribution:s}"
                 )
                 fit <- dccfit(
@@ -71,7 +87,9 @@ class MGARCH:
         """
         self.mgarch = ro.r(r_dcc_garch_code)
 
-    def _define_r_code_model_go(self) -> None:
+    def _define_r_code_model_go(
+            self, gogarchspec_mean_model: str = "c(1, 1)"
+    ) -> None:
         """
         Note that the double curly brackets are necessary for Python's f-strings.
         """
@@ -82,7 +100,7 @@ class MGARCH:
                 n_time_series <- dim(r_time_series)[2]
                 spec <- gogarchspec(
                     mean.model = list(demean = "constant"),
-                    variance.model = list(model = "sGARCH", garchOrder = c(1, 1), submodel = NULL),
+                    variance.model = list(model = "sGARCH", garchOrder = {gogarchspec_mean_model:s}, submodel = NULL),
                     distribution.model = "manig",
                     ica = "fastica"
                 )
@@ -110,13 +128,13 @@ class MGARCH:
             logging.error("Data length too short to train MGARCH models on.")
             exit()
         match training_type:
-            case 'joint':
+            case 'joint' | 'multivariate':
                 fit, self.train_location_covariance_structure = self._fit_model_joint(training_data_df)
                 self.fit = fit
-            case 'bivariate_loop':
+            case 'bivariate_loop' | 'pairwise':
                 self.train_location_covariance_structure = self._fit_model_bivariate_loop(training_data_df)
             case _:
-                logging.error(f"Training type '{training_type:s}' not recognized.")
+                raise NotImplementedError(f"Training type '{training_type:s}' not recognized.")
 
     def _fit_model_joint(self, training_data_df: pd.DataFrame):
         """
@@ -128,12 +146,14 @@ class MGARCH:
         r_training_data_df = self._convert_to_r_df(training_data_df)  # R format DataFrame
         fit, train_location_covariance_structure = self.mgarch(r_training_data_df)  # <class 'rpy2.robjects.methods.RS4'>, <class 'rpy2.robjects.vectors.FloatArray'>
         train_location_covariance_structure = np.array(train_location_covariance_structure)  # (D, D, N)
-        train_location_covariance_structure = np.transpose(train_location_covariance_structure, (2, 0, 1))  # (N, D, D)
+        train_location_covariance_structure = np.transpose(
+            train_location_covariance_structure, (2, 0, 1)
+        )  # (N, D, D)
         return fit, train_location_covariance_structure
 
     def _fit_model_bivariate_loop(self, training_data_df: pd.DataFrame) -> np.array:
         """
-        Here we loop over all edges.
+        Here we loop over all edges in pairwise fashion.
         :param training_data_df: expected of shape (N, D).
         :return:
         """
@@ -161,7 +181,7 @@ class MGARCH:
 
         return train_location_covariance_structure
 
-    def save_model_predictions(
+    def save_tvfc_estimates(
             self, savedir: str, model_name: str,
             connectivity_metric: str = 'correlation'
     ):
@@ -182,10 +202,11 @@ class MGARCH:
         tlcs_df.to_csv(
             os.path.join(savedir, model_name)
         )
-        logging.info(f"Saved MGARCH model (train location) predictions to '{savedir:s}'.")
+        logging.info(f"Saved MGARCH model (train location) estimates to '{savedir:s}'.")
 
     @staticmethod
-    def load_model_predictions(savedir: str, model_name: str) -> np.array:
+    def load_model_estimates(savedir: str, model_name: str) -> np.array:
+        """Load model TVFC estimates."""
         train_loc_cov_structure = pd.read_csv(os.path.join(savedir, model_name))  # (D*D, N)
         train_loc_cov_structure = to_3d_format(train_loc_cov_structure)  # (N, D, D)
         return train_loc_cov_structure
