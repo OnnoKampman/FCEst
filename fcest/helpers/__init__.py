@@ -9,6 +9,8 @@ __all__ = [
     "convert_tensor_to_correlation",
     "are_all_positive_definite",
     "zscore_estimates",
+    "get_all_lower_triangular_indices_tuples",
+    "find_nearest_positive_definite",
     "to_2d_format",
     "to_3d_format",
     "test_for_normality",
