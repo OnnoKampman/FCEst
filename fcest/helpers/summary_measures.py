@@ -5,6 +5,13 @@ from statsmodels.tsa.ar_model import AutoReg
 
 from .array_operations import get_all_lower_triangular_indices_tuples
 
+__all__ = [
+    "summarize_tvfc_estimates", 
+    "fit_and_extract_ar1_param", 
+    "compute_rate_of_change", 
+    "_rate_of_change",
+]
+
 
 def summarize_tvfc_estimates(
         full_covariance_structure: np.array, tvfc_summary_metric: str
