@@ -29,6 +29,7 @@ setup(
         'pandas',
         'rpy2==3.4.5',
         'scipy',
+        'statsmodels',
         'tensorflow',
     ],
     python_requires='>=3.10',

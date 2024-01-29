@@ -17,3 +17,4 @@ pip install -e .
 ## Contributing
 
 FCEst is an open-source project and contributions from the community are more than welcome.
+Please raise an issue on Github or send me a message.
