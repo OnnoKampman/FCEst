@@ -17,21 +17,28 @@ logging.basicConfig(
 
 class TestWishartProcess(unittest.TestCase):
 
+    @staticmethod
+    def _generate_dummy_data() -> (np.array, np.array):
+
+        n_time_series = 2
+        n_time_steps = 7
+
+        x = np.linspace(0, 1, n_time_steps).reshape(-1, 1)
+        y = np.random.random(size=(n_time_steps, n_time_series))
+
+        return x, y
+
     def test_sparse_variational_wishart_process(self):
         """
         Test instantiation of SparseVariationalWishartProcess.
         """
-        n_time_series = 2
-        n_time_steps = 7
-
-        x = np.linspace(0, 1, n_time_steps)
-        y = np.random.random(size=(n_time_steps, n_time_series))
+        x, y = self._generate_dummy_data()  # (N, 1), (N, D)
 
         k = gpflow.kernels.Matern52()
         m = SparseVariationalWishartProcess(
-            D=n_time_series,
-            Z=np.arange(n_time_steps),
-            nu=n_time_series,
+            D=y.shape[1],
+            Z=np.arange(y.shape[0]),
+            nu=y.shape[1],
             kernel=k,
         )
         maxiter = ci_niter(3)
@@ -47,17 +54,13 @@ class TestWishartProcess(unittest.TestCase):
         """
         Test instantiation of VariationalWishartProcess.
         """
-        n_time_series = 2
-        n_time_steps = 7
-
-        x = np.linspace(0, 1, n_time_steps)
-        y = np.random.random(size=(n_time_steps, n_time_series))
+        x, y = self._generate_dummy_data()  # (N, 1), (N, D)
 
         k = gpflow.kernels.Matern52()
         m = VariationalWishartProcess(
             x_observed=x,
             y_observed=y,
-            nu=n_time_series,
+            nu=y.shape[1],
             kernel=k,
         )
         maxiter = ci_niter(3)
