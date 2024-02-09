@@ -9,13 +9,22 @@ __all__ = [
 ]
 
 
-def highpass_filter_data(y_observed: np.array, window_length: int, repetition_time: float):
+def highpass_filter_data(
+        y_observed: np.array, window_length: int, repetition_time: float
+) -> np.array:
     """
     We want to remove frequencies below 1 / window length (in seconds).
+
+    References
         https://nilearn.github.io/stable/modules/generated/nilearn.signal.butterworth.html
+
+    Parameters
+    ----------
     :param y_observed:
-    :param window_length: in TRs.
-    :param repetition_time: TR in seconds.
+    :param window_length:
+        In TRs.
+    :param repetition_time:
+        TR in seconds.
     :return:
     """
     sampling_rate = 1.0 / repetition_time

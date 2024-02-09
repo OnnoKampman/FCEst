@@ -15,10 +15,14 @@ logging.basicConfig(
 
 
 class TestMGARCH(unittest.TestCase):
-    """Test the MGARCH class."""
+    """
+    Test the MGARCH class.
+    """
 
     def test_mgarch(self):
-        """Test various instantiations of the MGARCH class."""
+        """
+        Test various instantiations of the MGARCH class.
+        """
 
         # In the bivariate case (D = 2), joint and pairwise estimation should be equivalent.
         m = MGARCH(

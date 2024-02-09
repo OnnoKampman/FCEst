@@ -1,3 +1,17 @@
+# Copyright 2020-2024 The FCEst Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
 import os
 
@@ -13,21 +27,31 @@ from ..helpers.filtering import highpass_filter_data
 class SlidingWindows:
     """
     Main class for sliding-windows methods for time-varying functional connectivity (TVFC) estimation.
+
     TODO: implement tapered sliding-windows (TSW)
     TODO: implement partial correlation estimation on top of 'simple' estimation
     """
 
     def __init__(
-            self, x_train_locations: np.array, y_train_locations: np.array,
-            repetition_time: float = None, window_shape: str = 'rectangle'
-    ):
+            self,
+            x_train_locations: np.array,
+            y_train_locations: np.array,
+            repetition_time: float = None,
+            window_shape: str = 'rectangle',
+    ) -> None:
         """
         Main sliding-windows functional connectivity class.
-        :param x_train_locations: array of expected shape (n_time_steps, 1), i.e. (N, 1)
-        :param y_train_locations: array of expected shape (n_time_steps, n_time_series), i.e. (N, D)
-        :param repetition_time: if no repetition time is fed, then we assume we are running on synthetic data.
-        :param window_shape: 'rectangle', 'tapered' (Gaussian)
-        :return:
+
+        Parameters
+        ----------
+        :param x_train_locations:
+            Array of expected shape (n_time_steps, 1), i.e. (N, 1)
+        :param y_train_locations:
+            Array of expected shape (n_time_steps, n_time_series), i.e. (N, D)
+        :param repetition_time:
+            If no repetition time is fed, then we assume we are running on synthetic data.
+        :param window_shape:
+            'rectangle', 'tapered' (Gaussian)
         """
         self.x_train = x_train_locations
         self.y_train = y_train_locations
@@ -52,8 +76,12 @@ class SlidingWindows:
     ) -> np.array:
         """
         Static functional connectivity (sFC) structure estimate.
+
+        Parameters
+        ----------
         :param connectivity_metric:
-        :param return_structure: if True, returns a covariance structure instead of matrix.
+        :param return_structure:
+            If True, returns a covariance structure instead of matrix.
         :return:
             covariance matrix array of shape (D, D), or;
             covariance structure array of shape (N_train, D, D).
@@ -84,19 +112,26 @@ class SlidingWindows:
         Overlapping sliding-windows estimate.
         A step size of a single data point is common.
         Typical window lengths range from 30 seconds (15 measurements at TR = 2) to 60 seconds.
+
         TODO: plot frequency domain before and after filter
 
         We apply high-pass filtering.
         Band-pass filtering up to 0.08 Hz could be used too, mainly for resting-state data.
 
-        :param window_length: number of observations in one window.
+        Parameters
+        ----------
+        :param window_length:
+            Number of observations in one window.
             That is, this is measured in TRs (number of volumes), not in seconds.
             Note: there is still some discussion over what a good window length is.
-        :param step_size: number of observations the window is moved.
+        :param step_size:
+            Number of observations the window is moved.
             Also referred to as window offset.
             A step size of one TR is generally accepted to give the best results.
-        :param repetition_time: if no repetition time is fed, then we assume we are running on synthetic data.
-        :param connectivity_metric: brain region functional connectivity metric, either 'covariance' or 'correlation'.
+        :param repetition_time:
+            If no repetition time is fed, then we assume we are running on synthetic data.
+        :param connectivity_metric:
+            Brain region functional connectivity metric, either 'covariance' or 'correlation'.
         :return:
             TVFC covariance structure array of shape (N, D, D), i.e. (n_time_steps, n_time_series, n_time_series).
         """
@@ -136,7 +171,11 @@ class SlidingWindows:
     ) -> int:
         """
         This is currently run for a single subject.
-        :param window_length_step_size: should be 2 to make sure the window length is always uneven (and thus symmetrical)
+
+        Parameters
+        ----------
+        :param window_length_step_size:
+            Should be 2 to make sure the window length is always uneven (and thus symmetrical).
         :param eval_location_step_size:
         :return:
             Optimal window length (integer of TRs).
@@ -153,10 +192,15 @@ class SlidingWindows:
     ) -> pd.DataFrame:
         """
         This is currently run for a single subject.
+
         TODO: is this the best way of doing cross-validation?
         TODO: we could also consider this per time point and take the optimal window length estimates as the final estimates.
         TODO: implement a bivariate loop version (each edge has a different window length)
-        :param window_length_step_size: should be 2 to make sure the window length is always uneven (and thus symmetrical)
+
+        Parameters
+        ----------
+        :param window_length_step_size:
+            Should be 2 to make sure the window length is always uneven (and thus symmetrical)
         :param eval_location_step_size:
         :return:
             DataFrame of shape (n_eval_locations, n_proposed_window_lengths).
@@ -227,6 +271,7 @@ class SlidingWindows:
             which are typically of interest in rs-fMRI studies.
         We consider this to be our minimum window length therefore.
         We do not consider a maximum length - if the signal is static then SW approach should be able to learn that.
+
         TODO: does this work with LEOO data split?
         """
         if self.repetition_time is not None:
@@ -276,6 +321,9 @@ class SlidingWindows:
         """
         Given a DataFrame of cross-validation results, this returns the optimal window length.
         TODO: we could add a plot of these results for verification
+
+        Parameters
+        ----------
         :param results_df:
         :return:
         """
@@ -292,7 +340,11 @@ class SlidingWindows:
     def windowed_cov_estimation(self, n_windows: int) -> np.array:
         """
         Segmented, non-overlapping windows.
-        :param n_windows: number of non-overlapping windows.
+
+        Parameters
+        ----------
+        :param n_windows:
+            Number of non-overlapping windows.
             If set to 1, this is the static covariance estimate.
         :return:
             covariance structure array of shape (N, D, D), i.e. (n_time_steps, n_time_series, n_time_series).
@@ -313,11 +365,15 @@ class SlidingWindows:
     ) -> None:
         """
         Saves TVFC estimates.
+
+        Parameters
+        ----------
         :param optimal_window_length:
         :param savedir:
         :param model_name:
         :param repetition_time:
-        :param connectivity_metric: 'correlation', 'covariance'
+        :param connectivity_metric:
+            'correlation', 'covariance'
         """
         train_loc_cov_structure = self.overlapping_windowed_cov_estimation(
             window_length=optimal_window_length,
@@ -340,6 +396,9 @@ class SlidingWindows:
     ) -> np.array:
         """
         Loads SW-CV model estimates.
+
+        Parameters
+        ----------
         :param savedir:
         :param model_name:
         :return:

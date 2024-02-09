@@ -9,7 +9,9 @@ from fcest.helpers.array_operations import to_correlation_structure
 
 
 class TestArrayOperations(unittest.TestCase):
-    """Test functions in array_operations.py."""
+    """
+    Test functions in array_operations.py.
+    """
 
     def test_assert_positive_definite_not_symmetric(self):
         matrices = [

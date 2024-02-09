@@ -6,7 +6,9 @@ from fcest.helpers.data import to_2d_format, to_3d_format
 
 
 class TestData(unittest.TestCase):
-    """Test functions in data.py."""
+    """
+    Test functions in data.py.
+    """
 
     def test_to_2d_format(self):
         test_3d_format_covariance_structure = self._get_test_covariance_structure()

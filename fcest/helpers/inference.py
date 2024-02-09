@@ -7,7 +7,6 @@ from gpflow.monitor import (
     MonitorTaskGroup,
     ScalarToTensorBoard,
 )
-import numpy as np
 import tensorflow as tf
 
 
@@ -17,9 +16,19 @@ def run_adam_vwp(
     """
     GPflow utility function for running the Adam optimizer.
     View Tensorboard logs by running `tensorboard --logdir=${log_dir}`.
+
     TODO: allow for minibatch training
-    :param model: GPflow model
-    :param iterations: number of iterations
+
+    Notes:
+    - The Adam optimizer is typically used in deep neural networks.
+        It may not be the ideal optimizer for GP models.
+
+    Parameters
+    ----------
+    :param model:
+        GPflow model.
+    :param iterations:
+        The number of iterations.
     :param log_interval:
     :param log_dir:
     :return:
@@ -74,14 +83,22 @@ def run_adam_svwp(
 ) -> list:
     """
     Utility function running the Adam optimizer.
+
     TODO: add option for minibatches? merge with above function?
-    :param model: GPflow model
-    :param data: a tuple with:
-        x_observed: expected in shape (n_time_steps, 1), i.e. (N, 1).
-        y_observed: expected in shape (n_time_steps, n_time_series), i.e. (N, D).
-    :param iterations: number of iterations
+
+    Parameters
+    ----------
+    :param model:
+        GPflow model.
+    :param data:
+        A tuple with:
+            x_observed: expected in shape (n_time_steps, 1), i.e. (N, 1).
+            y_observed: expected in shape (n_time_steps, n_time_series), i.e. (N, D).
+    :param iterations:
+        Number of iterations.
     :param log_interval:
-    :param log_dir: directory where to save Tensorboard log files.
+    :param log_dir:
+        Directory where to save Tensorboard log files.
     :return:
     """
     # Create an Adam Optimizer action

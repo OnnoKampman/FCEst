@@ -19,8 +19,13 @@ __all__ = [
 def to_correlation_structure(covariance_structure: np.array) -> np.array:
     """
     Converts a covariance structure into a correlation structure.
-    :param covariance_structure: array of shape (N, D, D).
-    :return: array of shape (N, D, D)
+
+    Parameters
+    ----------
+    :param covariance_structure:
+        Array of shape (N, D, D).
+    :return:
+        Array of shape (N, D, D)
     """
     correlation_structure = [
         _correlation_from_covariance(time_step_covariance_matrix) for time_step_covariance_matrix in covariance_structure
@@ -31,6 +36,7 @@ def to_correlation_structure(covariance_structure: np.array) -> np.array:
 def _correlation_from_covariance(covariance_matrix: np.array) -> np.array:
     """
     Converts covariance matrix into a correlation matrix.
+
     TODO: perhaps we could merge this with nilearn.connectome.cov_to_corr
     """
     v = np.sqrt(np.diag(covariance_matrix))  # (D, )
@@ -43,6 +49,9 @@ def _correlation_from_covariance(covariance_matrix: np.array) -> np.array:
 def convert_tensor_to_correlation(covariance_matrix: tf.Tensor) -> tf.Tensor:
     """
     Convert covariance tensor to correlation tensor.
+
+    Parameters
+    ----------
     :param covariance_matrix:
     :return:
     """
@@ -55,7 +64,9 @@ def convert_tensor_to_correlation(covariance_matrix: tf.Tensor) -> tf.Tensor:
 
 
 def are_all_positive_definite(covariance_matrices: tf.Tensor) -> bool:
-    """Checks if collection of covariance matrices are all positive definite."""
+    """
+    Checks if collection of covariance matrices are all positive definite.
+    """
     for covariance_matrix_tensor in covariance_matrices:
         # check covariance matrix estimates are symmetric
         if not np.allclose(
@@ -77,7 +88,9 @@ def are_all_positive_definite(covariance_matrices: tf.Tensor) -> bool:
 
 
 def zscore_estimates(tvfc_estimates_array: np.array) -> np.array:
-    """Returns z-scored or standard-scored estimates."""
+    """
+    Returns z-scored or standard-scored estimates.
+    """
     return tvfc_estimates_array - np.mean(tvfc_estimates_array) / np.std(tvfc_estimates_array)
 
 
@@ -85,6 +98,9 @@ def get_all_lower_triangular_indices_tuples(n_time_series: int) -> list:
     """
     Returns a list of tuples, where each tuple contains the indices of one of the lower
     triangular elements of a matrix.
+
+    Parameters
+    ----------
     :param n_time_series:
     :return:
     """
@@ -119,6 +135,9 @@ def find_nearest_positive_definite(matrix: np.array) -> np.array:
 def _is_positive_definite(matrix: np.array) -> bool:
     """
     Check if a matrix is positive definite.
+
+    Parameters
+    ----------
     :param matrix:
     :return:
     """

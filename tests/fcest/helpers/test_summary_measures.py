@@ -7,7 +7,9 @@ from fcest.helpers.summary_measures import summarize_tvfc_estimates
 
 
 class TestSummaryMeasures(unittest.TestCase):
-    """Test functions in summary_measures.py."""
+    """
+    Test functions in summary_measures.py.
+    """
 
     def test_summarize_tvfc_estimates(self):
         test_covariance_structure = self._simulate_d2_time_series()

@@ -1,3 +1,17 @@
+# Copyright 2020-2024 The FCEst Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
 
 from gpflow import likelihoods
@@ -13,22 +27,37 @@ logging.basicConfig(
 
 
 class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
-    """Class for Wishart process likelihoods."""
+    """
+    Class for Wishart process likelihoods.
+    """
 
     def __init__(
-            self, D: int, nu: int, n_mc_samples: int = 2,
+            self,
+            D: int,
+            nu: int,
+            n_mc_samples: int = 2,
             A_scale_matrix_option: str = 'train_full_matrix',
-            train_additive_noise: bool = False, additive_noise_matrix_init: float = 0.01,
-            verbose: bool = True
-    ):
+            train_additive_noise: bool = False,
+            additive_noise_matrix_init: float = 0.01,
+            verbose: bool = True,
+    ) -> None:
         """
-        :param D: the number of time series
-        :param nu: degrees of freedom
-        :param n_mc_samples (S): number of Monte Carlo samples used to approximate gradients
+        Initialize the Wishart process likelihood.
+
+        Parameters
+        ----------
+        :param D: 
+            The number of time series.
+        :param nu: 
+            Degrees of freedom.
+        :param n_mc_samples:
+            Number of Monte Carlo samples used to approximate gradients (S).
         :param A_scale_matrix_option:
-        :param train_additive_noise: whether to train the additive noise matrix (Lambda).
+        :param train_additive_noise:
+            Whether to train the additive noise matrix (Lambda).
         :param additive_noise_matrix_init:
-            initial value of additive noise. Heaukulani2019 uses 0.001.
+            Initial value of additive noise.
+            Note: Heaukulani2019 used 0.001.
             However, empirical results seem to indicate that 0.01 is much better than 0.001.
         :param verbose:
         """
@@ -45,7 +74,9 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
         self.A_scale_matrix = self._set_A_scale_matrix(option=A_scale_matrix_option)  # (D, D)
 
         # The additive noise matrix must have positive diagonal values, which this softplus construction guarantees.
-        additive_noise_matrix_init = np.log(np.exp(additive_noise_matrix_init) - 1)  # inverse softplus
+        additive_noise_matrix_init = np.log(
+            np.exp(additive_noise_matrix_init) - 1
+        )  # inverse softplus
         self.additive_part = tf.Variable(
             additive_noise_matrix_init * tf.ones(D, dtype=tf.float64),
             dtype=tf.float64,
@@ -65,9 +96,15 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
         That is, it computes log p(Y | variational parameters).
         This does not include the KL term.
         Models inheriting VGP are required to have this signature.
-        :param f_mean: (N, D * nu), the parameters of the latent GP points F
-        :param f_variance: (N, D * nu), the parameters of the latent GP points F
-        :param y_data: NumPy array of shape (n_time_steps, n_time_series) or (N, D).
+
+        Parameters
+        ----------
+        :param f_mean:
+            (N, D * nu), the parameters of the latent GP points F
+        :param f_variance:
+            (N, D * nu), the parameters of the latent GP points F
+        :param y_data:
+            NumPy array of shape (n_time_steps, n_time_series) or (N, D).
         :return:
             Tensor of shape (N, ); logp, log probability density of the data.
         """
@@ -88,9 +125,15 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
     def _log_prob(self, f_sample: tf.Tensor, y_data: np.array) -> tf.Tensor:
         """
         Compute the (Monte Carlo estimate of) the log likelihood given samples of the GPs.
-        :param f_sample: (n_mc_samples, n_time_steps, n_time_series, degrees_of_freedom) or (S, N, D, nu) -
-        :param y_data: (n_time_steps, n_time_series) or (N, D) -
-        :return: (n_time_steps, ) or (N, )
+
+        Parameters
+        ----------
+        :param f_sample:
+            (n_mc_samples, n_time_steps, n_time_series, degrees_of_freedom) or (S, N, D, nu) -
+        :param y_data:
+            (n_time_steps, n_time_series) or (N, D) -
+        :return:
+            (n_time_steps, ) or (N, )
         """
         # compute the constant term of the log likelihood
         constant_term = - self.D / 2 * tf.math.log(2 * tf.constant(np.pi, dtype=tf.float64))
@@ -132,6 +175,9 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
     def _set_A_scale_matrix(self, option: str = 'identity') -> tf.Tensor:
         """
         A (the Cholesky factor of scale matrix V) represents the mean of estimates.
+
+        Parameters
+        ----------
         :param option:
             1) 'identity': we don't train it, and fix it as an identity matrix.
                 In the SWPR code, this option was implemented.
@@ -139,7 +185,8 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
             3) 'train_diagonal': we only train the diagonal values and fix the rest as zeros.
                 This option was implemented in the Heaukulani2019 paper.
             4) 'train_full_matrix': we train the whole matrix.
-        :return: matrix of shape (D, D)
+        :return:
+            Matrix of shape (D, D).
         """
         if option == 'identity':
             A_scale_matrix = tf.Variable(
@@ -173,6 +220,9 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
     def _add_diagonal_additive_noise(self, cov_matrix):
         """
         Add some noise, either fixed or trained.
+
+        Parameters
+        ----------
         :param cov_matrix:
         :return:
         """
