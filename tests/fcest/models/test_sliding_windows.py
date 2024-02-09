@@ -14,7 +14,9 @@ logging.basicConfig(
 
 
 class TestSlidingWindows(unittest.TestCase):
-    """Test the SlidingWindows class."""
+    """
+    Test the SlidingWindows class.
+    """
 
     def test_static_covariance_estimate_bivariate(self):
         y_test = np.array([

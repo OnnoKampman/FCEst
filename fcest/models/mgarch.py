@@ -1,3 +1,17 @@
+# Copyright 2020-2024 The FCEst Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
 import os
 
@@ -13,20 +27,30 @@ from ..helpers.data import to_3d_format
 
 
 class MGARCH:
-    """MGARCH base class."""
+    """
+    MGARCH base class.
+    """
 
     def __init__(
-            self, mgarch_type: str,
-            uspec_mean_model: str = "c(1, 1)", 
+            self,
+            mgarch_type: str,
+            uspec_mean_model: str = "c(1, 1)",
             uspec_variance_model: str = "c(1, 1)",
-            dccspec_order: str = "c(1, 1)"
-    ):
+            dccspec_order: str = "c(1, 1)",
+    ) -> None:
         """
         You will need to run `install.packages('rmgarch')` in your R console.
 
         References
             Inspired by https://quant.stackexchange.com/questions/20687/multivariate-garch-in-python
-        :param mgarch_type: either 'DCC' or 'GO'.
+
+        Parameters
+        ----------
+        :param mgarch_type:
+            Either 'DCC' or 'GO'.
+        :param uspec_mean_model:
+        :param uspec_variance_model:
+        :param dccspec_order:
         """
         match mgarch_type:
             case 'DCC':
@@ -49,11 +73,19 @@ class MGARCH:
 
         References
             For more inspiration: https://github.com/canlab/Lindquist_Dynamic_Correlation
-        :param spec_distribution: "mvt" or "mvnorm"
-        :param fit_control: determines whether standard errors are computed
-        :param uspec_mean_model: used to be c(1, 0)
-        :param uspec_variance_model: this was not here before
-        :param dccspec_order: default is c(1, 1)
+
+        Parameters
+        ----------
+        :param uspec_mean_model:
+            Note: this used to be c(1, 0).
+        :param uspec_variance_model:
+            Note: this was not here before.
+        :param dccspec_order:
+            Default is c(1, 1).
+        :param spec_distribution:
+            "mvt" or "mvnorm"
+        :param fit_control:
+            Determines whether standard errors are computed.
         """
         r_dcc_garch_code = f"""
             library('rugarch')
@@ -121,8 +153,13 @@ class MGARCH:
     ) -> None:
         """
         Note that these MGARCH implementations require at least 100 time points to train.
-        :param training_data_df: expected of shape (N, D).
-        :param training_type: 'joint' or 'bivariate_loop'.
+
+        Parameters
+        ----------
+        :param training_data_df:
+            Expected of shape (N, D).
+        :param training_type:
+            'joint' or 'bivariate_loop'.
         """
         if len(training_data_df) < 100:
             logging.error("Data length too short to train MGARCH models on.")
@@ -138,6 +175,10 @@ class MGARCH:
 
     def _fit_model_joint(self, training_data_df: pd.DataFrame):
         """
+        Fit the MGARCH model to the training data jointly.
+
+        Parameters
+        ----------
         :param training_data_df:
         :return:
             fit: object with fit results overview and parameters
@@ -154,7 +195,11 @@ class MGARCH:
     def _fit_model_bivariate_loop(self, training_data_df: pd.DataFrame) -> np.array:
         """
         Here we loop over all edges in pairwise fashion.
-        :param training_data_df: expected of shape (N, D).
+
+        Parameters
+        ----------
+        :param training_data_df:
+            Expected of shape (N, D).
         :return:
         """
         n_time_steps = training_data_df.shape[0]
@@ -184,13 +229,17 @@ class MGARCH:
     def save_tvfc_estimates(
             self, savedir: str, model_name: str,
             connectivity_metric: str = 'correlation'
-    ):
+    ) -> None:
         """
+        Save TVFC estimates.
+
         TODO: write unit test for this
+
+        Parameters
+        ----------
         :param savedir:
         :param model_name:
         :param connectivity_metric:
-        :return:
         """
         tlcs = self.train_location_covariance_structure  # (N, D, D)
         if connectivity_metric == 'correlation':
@@ -206,7 +255,9 @@ class MGARCH:
 
     @staticmethod
     def load_model_estimates(savedir: str, model_name: str) -> np.array:
-        """Load model TVFC estimates."""
+        """
+        Load model TVFC estimates.
+        """
         train_loc_cov_structure = pd.read_csv(os.path.join(savedir, model_name))  # (D*D, N)
         train_loc_cov_structure = to_3d_format(train_loc_cov_structure)  # (N, D, D)
         return train_loc_cov_structure
@@ -216,17 +267,3 @@ class MGARCH:
         with localconverter(ro.default_converter + pandas2ri.converter):
             r_from_python_df = ro.conversion.py2rpy(python_df)
         return r_from_python_df
-
-
-if __name__ == '__main__':
-
-    # Create dummy data set.
-    n_time_steps = 101
-    n_time_series = 3
-    train_df = pd.DataFrame(np.random.random(size=(n_time_steps, n_time_series)))
-    print(train_df.head())
-
-    # Fit model.
-    dcc_garch_m = MGARCH(mgarch_type='DCC')
-    dcc_garch_m.fit_model(train_df)  # a list here
-    print('train location covariance matrices', dcc_garch_m.train_location_covariance_structure.shape)

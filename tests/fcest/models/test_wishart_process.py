@@ -15,7 +15,9 @@ logging.basicConfig(
 class TestWishartProcess(unittest.TestCase):
 
     def test_sparse_variational_wishart_process(self):
-        """Test instantiation of SparseVariationalWishartProcess."""
+        """
+        Test instantiation of SparseVariationalWishartProcess.
+        """
         n_time_series = 2
         n_time_steps = 7
 
@@ -26,7 +28,9 @@ class TestWishartProcess(unittest.TestCase):
         )
 
     def test_variational_wishart_process(self):
-        """Test instantiation of VariationalWishartProcess."""
+        """
+        Test instantiation of VariationalWishartProcess.
+        """
         n_time_series = 2
         n_time_steps = 7
 

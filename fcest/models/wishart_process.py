@@ -1,10 +1,24 @@
+# Copyright 2020-2024 The FCEst Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import logging
 import os
 
 import gpflow.kernels
-from gpflow import kernels, models
 from gpflow.kernels import Kernel
+from gpflow import models
 import numpy as np
 import tensorflow as tf
 
@@ -22,6 +36,7 @@ class VariationalWishartProcess(models.vgp.VGP):
     """
     Base class of the variational Wishart process (VWP) model.
     Most of the work will be done by `gpflow.models.vgp.VGP`.
+
     TODO: add option for minibatch training
     TODO: shall we convert all to float32 instead of float64 to speed up computation?
         from gpflow.config import default_float
@@ -33,27 +48,42 @@ class VariationalWishartProcess(models.vgp.VGP):
     """
 
     def __init__(
-            self, x_observed: np.array, y_observed: np.array, nu: int,
+            self,
+            x_observed: np.array,
+            y_observed: np.array,
+            nu: int,
             kernel: Kernel = None,
             n_mc_samples: int = 5,
-            A_scale_matrix_option: str = 'train_full_matrix', train_additive_noise: bool = True,
-            kernel_lengthscale_init: float = 0.3, q_sqrt_init: float = 0.001,
-            n_factors: int = None
-    ):
+            A_scale_matrix_option: str = 'train_full_matrix',
+            train_additive_noise: bool = True,
+            kernel_lengthscale_init: float = 0.3,
+            q_sqrt_init: float = 0.001,
+            n_factors: int = None,
+    ) -> None:
         """
-        Initialize VWP model.
-        :param x_observed: expected in shape (n_time_steps, 1), i.e. (N, 1).
-        :param y_observed: expected in shape (n_time_steps, n_time_series), i.e. (N, D).
+        Initialize Variational Wishart Process (VWP) model.
+
+        Parameters
+        ----------
+        :param x_observed:
+            Expected in shape (n_time_steps, 1), i.e. (N, 1).
+        :param y_observed:
+            Expected in shape (n_time_steps, n_time_series), i.e. (N, D).
             Expected to have (approximately) mean zero.
-        :param nu: degrees of freedom.
+        :param nu:
+            Degrees of freedom.
             Empirical results suggest setting nu = D is optimal.
-        :param kernel: GPflow kernel
-        :param n_mc_samples: in the paper this is R, in the code sometimes S - the number of Monte Carlo samples taken
-            to approximate the ELBO.
+        :param kernel:
+            GPflow kernel.
+        :param n_mc_samples:
+            The number of Monte Carlo samples used to approximate the ELBO.
+            In the paper this is R, in the code sometimes S.
         :param A_scale_matrix_option:
+            We found that training the full matrix yields the best results.
         :param train_additive_noise:
         :param kernel_lengthscale_init:
-        :param q_sqrt_init: Empirical results suggest a value of 0.001 is slightly better than 0.01.
+        :param q_sqrt_init:
+            Empirical results suggest a value of 0.001 is slightly better than 0.01.
         :param n_factors:
         """
         self.D = y_observed.shape[1]
@@ -88,8 +118,12 @@ class VariationalWishartProcess(models.vgp.VGP):
     ) -> (tf.Tensor, tf.Tensor):
         """
         The main attribute to predict covariance matrices at any point in time.
+
+        Parameters
+        ----------
         :param x_new:
-        :param n_mc_samples: Heaukulani2019 uses 300 MC samples for prediction.
+        :param n_mc_samples:
+            Note: Heaukulani2019 used 300 MC samples for prediction.
         :return:
         """
         cov_samples = self._get_cov_samples(x_new, n_mc_samples)  # (S_new, N_new, D, D)
@@ -104,6 +138,8 @@ class VariationalWishartProcess(models.vgp.VGP):
             self, x_new: np.array, n_mc_samples: int = 300
     ) -> (tf.Tensor, tf.Tensor):
         """
+        The main attribute to predict correlation matrices at any point in time.
+
         TODO: how should we convert sampling uncertainty to correlation confidence interval?
         """
         cov_samples = self._get_cov_samples(x_new, n_mc_samples)  # (S_new, N_new, D, D)
@@ -122,10 +158,16 @@ class VariationalWishartProcess(models.vgp.VGP):
         Prediction routine for covariance matrices.
         We could switch to a MLE routine for this too, i.e. removing the dependency on Monte Carlo samples.
         But in the Bayesian setting the sampling should work well.
+
         TODO: should we add the additive noise at prediction time?
-        :param x_new: (new) locations to get covariance matrix for.
+
+        Parameters
+        ----------
+        :param x_new:
+            The (new) locations to get covariance matrix for.
             Can be different from those in training data.
-        :param n_mc_samples: S_new: number of Monte Carlo samples to approximate covariance matrix with.
+        :param n_mc_samples:
+            S_new: number of Monte Carlo samples to approximate covariance matrix with.
             300 samples are used in previous paper.
         :return:
             AFFA here are the constructed covariance matrix samples.
@@ -158,7 +200,11 @@ class VariationalWishartProcess(models.vgp.VGP):
         """
         Model parameter initialization is crucial.
         self.kernel.lengthscales here is a gpflow.base.Parameter object.
-        :param kernel_lengthscale_init: float value to initialize all kernel lengthscales with.
+
+        Parameters
+        ----------
+        :param kernel_lengthscale_init:
+            Float value to initialize all kernel lengthscales with.
         :param q_sqrt_init:
         """
         try:
@@ -178,8 +224,12 @@ class VariationalWishartProcess(models.vgp.VGP):
         We only save the trained model parameters.
         At loading time, we re-instantiate the model and assign the saved model parameters.
         This currently only works for our Matern52 kernel!
+
+        Parameters
+        ----------
         :param savedir:
-        :param model_name: a string that ends in .json
+        :param model_name:
+            A string that ends in .json
         """
         params_dict = {
             'D': self.D,
@@ -203,6 +253,9 @@ class VariationalWishartProcess(models.vgp.VGP):
         """
         This assumes you have created a new model.
         All trained model parameters are assigned.
+
+        Parameters
+        ----------
         :param savedir:
         :param model_name:
         """
@@ -236,28 +289,44 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
     Most of the work will be done by `gpflow.models.svgp.SVGP`.
     This sparse implementation reduces computational cost if we have large N, but is not likely to improve performance.
     However, the location of the inducing points Z may be interesting by themselves.
+
     TODO: there is still some overlap with the non-sparse VariationalWishartProcess: we could merge some stuff
     """
 
     def __init__(
-            self, D: int, Z: np.array, nu: int, kernel: Kernel = kernels.Matern52(),
+            self,
+            D: int,
+            Z: np.array,
+            nu: int,
+            kernel: Kernel = gpflow.kernels.Matern52(),
             n_mc_samples: int = 5,
-            A_scale_matrix_option: str = 'train_full_matrix', train_additive_noise: bool = True,
-            kernel_lengthscale_init: float = 0.3, q_sqrt_init: float = 0.001,
-            n_factors: int = None, verbose: bool = True
-    ):
+            A_scale_matrix_option: str = 'train_full_matrix',
+            train_additive_noise: bool = True,
+            kernel_lengthscale_init: float = 0.3,
+            q_sqrt_init: float = 0.001,
+            n_factors: int = None,
+            verbose: bool = True
+    ) -> None:
         """
-        Initialize SVWP model.
-        :param D: number of time series, e.g. the number of brain Volumes of Interest (VOI).
-        :param Z: initial variational inducing points, of shape (n_inducing_points, 1).
-        :param nu: degrees of freedom.
+        Initialize Sparse Variational Wishart Process (SVWP) model.
+
+        Parameters
+        ----------
+        :param D:
+            Number of time series, e.g. the number of brain Volumes of Interest (VOI).
+        :param Z:
+            Initial variational inducing points, of shape (n_inducing_points, 1).
+        :param nu:
+            Degrees of freedom.
         :param kernel:
-        :param n_mc_samples: number of Monte Carlo samples taken to approximate the ELBO.
+        :param n_mc_samples:
+            Number of Monte Carlo samples taken to approximate the ELBO.
         :param A_scale_matrix_option:
         :param train_additive_noise:
         :param kernel_lengthscale_init:
         :param q_sqrt_init:
-        :param n_factors: number of factors to use in the factored model.
+        :param n_factors:
+            Number of factors to use in the factored model.
             If None, the non-factored model will be instantiated.
         :param verbose:
         """
@@ -292,7 +361,11 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
     ) -> (tf.Tensor, tf.Tensor):
         """
         The main attribute to predict covariance matrices at any point in time.
-        :param x_new: the test locations where we want to predict the covariance matrices.
+
+        Parameters
+        ----------
+        :param x_new:
+            The test locations where we want to predict the covariance matrices.
             Array of shape (x_new, 1).
         :param n_mc_samples:
         :return:
@@ -311,6 +384,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         """
         TODO: we don't use this
         The main attribute to predict covariance matrices at any point in time.
+
+        Parameters
+        ----------
         :param x_new:
         :param n_mc_samples:
         :return:
@@ -323,6 +399,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
     ) -> (tf.Tensor, tf.Tensor):
         """
         The main attribute to predict correlation matrices at any point in time.
+
         TODO: how should we convert sampling uncertainty to correlation confidence interval?
         """
         cov_samples = self._get_cov_samples(x_new, n_mc_samples)  # (S_new, N_new, D, D)
@@ -341,9 +418,14 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         Prediction routine for covariance matrices.
         We could switch to a MLE routine for this too, i.e. removing the dependency on Monte Carlo samples.
         But in the Bayesian setting the sampling should work well.
-        :param x_new: (new) locations to get covariance matrix for.
+
+        Parameters
+        ----------
+        :param x_new:
+            The (new) locations to get covariance matrix for.
             Can be different from those in training data.
-        :param n_mc_samples: S_new: number of Monte Carlo samples to approximate covariance matrix with.
+        :param n_mc_samples:
+            S_new: number of Monte Carlo samples to approximate covariance matrix with.
             300 samples are used in previous paper.
         :return:
             AFFA here are the constructed covariance matrix samples.
@@ -379,6 +461,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
     ) -> None:
         """
         Set initial values of trainable parameters.
+
+        Parameters
+        ----------
         :param kernel_lengthscale_init:
         :param q_sqrt_init:
         """
@@ -394,8 +479,12 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         At loading time, we re-instantiate the model and assign the saved model parameters.
         All tensors need to be converted to floats or lists before saving, as ndarrays are not JSON serializable.
         This currently only works for our Matern52 kernel!
+
+        Parameters
+        ----------
         :param savedir:
-        :param model_name: a string that ends in `.json`.
+        :param model_name:
+            A string that ends in `.json`.
         """
         params_dict = {
             'D': self.D,
@@ -420,6 +509,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         """
         This assumes you have created a new model.
         All trained model parameters are assigned.
+
+        Parameters
+        ----------
         :param savedir:
         :param model_name:
         """

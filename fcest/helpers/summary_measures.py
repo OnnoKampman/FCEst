@@ -19,7 +19,10 @@ def summarize_tvfc_estimates(
     """
     Summarize a full TVFC covariance structure over temporal axis.
 
-    :param full_covariance_structure: TVFC array of shape (N, D, D)
+    Parameters
+    ----------
+    :param full_covariance_structure:
+        TVFC array of shape (N, D, D).
     :param tvfc_summary_metric:
     :return:
         array of shape (D, D)
@@ -72,6 +75,9 @@ def compute_rate_of_change(full_covariance_structure: np.array) -> np.array:
     """
     Rate of change is a time series summary statistic that measures the intensity of fluctuations in time.
     It is defined here as the average relative step size across time.
+
+    Parameters
+    ----------
     :param full_covariance_structure: array of shape (N, D, D).
     :return:
         array of shape (D, D)
@@ -95,6 +101,9 @@ def _rate_of_change(
 ) -> np.array:
     """
     TODO: what should the rate of change be when the previous value is a zero?
+
+    Parameters
+    ----------
     :param current_value: 2D array
     :param previous_value: 2D array
     :return:

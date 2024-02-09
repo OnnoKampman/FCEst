@@ -15,17 +15,25 @@ logging.basicConfig(
 
 
 class TestLikelihoods(unittest.TestCase):
-    """Test functions in likelihoods.py."""
+    """
+    Test functions in likelihoods.py.
+    """
 
     def test_tensor_computations(
             self, n_mc_samples: int = 2, n_time_steps: int = 6, 
             n_time_series: int = 2, nu: int = 3
     ):
         """
-        :param n_mc_samples: number of MC samples (S).
-        :param n_time_steps: number of time steps (N).
-        :param n_time_series: number of time series (D).
-        :param nu: degrees of freedom.
+        Parameters
+        ----------
+        :param n_mc_samples:
+            Number of MC samples (S).
+        :param n_time_steps:
+            Number of time steps (N).
+        :param n_time_series:
+            Number of time series (D).
+        :param nu:
+            Degrees of freedom.
         :return:
         """
         A = 2 * np.eye(2)

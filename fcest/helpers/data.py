@@ -9,7 +9,9 @@ __all__ = [
 
 
 def to_2d_format(three_dimensional_cov_matrices_array: np.array) -> np.array:
-    """Convert estimates to 2D array to save it to disk."""
+    """
+    Convert estimates to 2D array to save it to disk.
+    """
     return three_dimensional_cov_matrices_array.reshape(
         len(three_dimensional_cov_matrices_array), -1
     ).T  # (D*D, N)
@@ -19,6 +21,9 @@ def to_3d_format(r_formatted_array: np.array) -> np.array:
     """
     We cannot store a 3D object in a `.csv` file, so it is stored as a 2D matrix.
     This function reshapes it to a 3D object.
+
+    Parameters
+    ----------
     :param r_formatted_array: array of shape (D*D, N).
     :return: array of shape (N, D, D).
     """
