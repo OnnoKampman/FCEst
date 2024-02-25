@@ -19,6 +19,7 @@ def run_adam(
     log_dir: str = None,
     data: tuple = None,
     train_inducing_variables: bool = True,
+    minibatch_size: int = None,
 ) -> list:
     """
     GPflow utility function for running the Adam optimizer.
@@ -49,6 +50,9 @@ def run_adam(
     """
     if not train_inducing_variables:
         gpflow.set_trainable(model.inducing_variable, False)
+
+    if minibatch_size is not None:
+        raise NotImplementedError("Minibatch training is not yet implemented.")
 
     # Create an Adam Optimizer action
     logf = []
@@ -108,7 +112,7 @@ def run_adam(
     def optimization_step():
         optimizer.minimize(
             training_loss,
-            model.trainable_variables
+            model.trainable_variables,
         )
 
     for step in range(iterations):
