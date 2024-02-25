@@ -14,7 +14,7 @@
 
 import logging
 
-from gpflow import likelihoods
+from gpflow.likelihoods import MonteCarloLikelihood
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework.errors import InvalidArgumentError
@@ -26,15 +26,16 @@ logging.basicConfig(
 )
 
 
-class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
+class WishartProcessLikelihood(MonteCarloLikelihood):
     """
     Class for Wishart process likelihoods.
+    It specifies an observation model connecting the latent functions ('F') to the data ('Y').
     """
 
     def __init__(
             self,
             D: int,
-            nu: int,
+            nu: int = None,
             n_mc_samples: int = 2,
             A_scale_matrix_option: str = 'train_full_matrix',
             train_additive_noise: bool = False,
@@ -65,8 +66,9 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
         if nu < D:
             raise Exception("Wishart Degrees of Freedom must be >= D.")
         super().__init__(
-            latent_dim=D*nu,
-            observation_dim=D
+            input_dim=1,
+            latent_dim=D * nu,
+            observation_dim=D,
         )
         self.D = D
         self.nu = nu
@@ -104,7 +106,7 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
         :param f_variance:
             (N, D * nu), the parameters of the latent GP points F
         :param y_data:
-            NumPy array of shape (n_time_steps, n_time_series) or (N, D).
+            NumPy array of shape (num_time_steps, num_time_series) or (N, D).
         :return:
             Tensor of shape (N, ); logp, log probability density of the data.
         """
@@ -129,11 +131,11 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
         Parameters
         ----------
         :param f_sample:
-            (n_mc_samples, n_time_steps, n_time_series, degrees_of_freedom) or (S, N, D, nu) -
+            (n_mc_samples, num_time_steps, num_time_series, degrees_of_freedom) or (S, N, D, nu) -
         :param y_data:
-            (n_time_steps, n_time_series) or (N, D) -
+            (num_time_steps, num_time_series) or (N, D) -
         :return:
-            (n_time_steps, ) or (N, )
+            (num_time_steps, ) or (N, )
         """
         # compute the constant term of the log likelihood
         constant_term = - self.D / 2 * tf.math.log(2 * tf.constant(np.pi, dtype=tf.float64))
@@ -231,7 +233,7 @@ class WishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
         )
 
 
-class FactoredWishartProcessLikelihood(likelihoods.MonteCarloLikelihood):
+class FactoredWishartProcessLikelihood(MonteCarloLikelihood):
 
     def __init__(self):
         raise NotImplementedError("Factorized Wishart process not implemented yet.")
