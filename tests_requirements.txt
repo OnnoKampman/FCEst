@@ -1,4 +1,4 @@
-gpflow==2.6.1
+gpflow>=2.6.0
 # mpfr  # for installing R package 'rmgarch' on Ubuntu
 numpy
 pandas==1.5.3
