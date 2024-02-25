@@ -24,8 +24,8 @@ class TestSlidingWindows(unittest.TestCase):
             [1, 1],
             [2, 0]
         ])  # (N, D)
-        n_time_steps = y_test.shape[0]
-        x_test = np.linspace(0, 1, n_time_steps)
+        num_time_steps = y_test.shape[0]
+        x_test = np.linspace(0, 1, num_time_steps)
         sliding_windows = SlidingWindows(
             x_train_locations=x_test,
             y_train_locations=y_test
@@ -37,7 +37,7 @@ class TestSlidingWindows(unittest.TestCase):
             [1., -1.],
             [-1., 1.]
         ])
-        true_cov = np.tile(true_cov, reps=(n_time_steps, 1, 1))
+        true_cov = np.tile(true_cov, reps=(num_time_steps, 1, 1))
         assert_array_equal(cov_estimates, true_cov)
 
     def test_static_correlation_estimate_bivariate(self):
@@ -46,8 +46,8 @@ class TestSlidingWindows(unittest.TestCase):
             [1, 1],
             [2, 0]
         ])  # (N, D)
-        n_time_steps = y_test.shape[0]
-        x_test = np.linspace(0, 1, n_time_steps)
+        num_time_steps = y_test.shape[0]
+        x_test = np.linspace(0, 1, num_time_steps)
         sliding_windows = SlidingWindows(
             x_train_locations=x_test,
             y_train_locations=y_test
@@ -59,7 +59,7 @@ class TestSlidingWindows(unittest.TestCase):
             [1., -1.],
             [-1., 1.]
         ])
-        true_corr = np.tile(true_corr, reps=(n_time_steps, 1, 1))
+        true_corr = np.tile(true_corr, reps=(num_time_steps, 1, 1))
         assert_array_equal(corr_estimates, true_corr)
 
     def test_static_covariance_estimate_trivariate(self):
@@ -68,8 +68,8 @@ class TestSlidingWindows(unittest.TestCase):
             [1, 1, 1],
             [2, 0, 0]
         ])  # (N, D)
-        n_time_steps = y_test.shape[0]
-        x_test = np.linspace(0, 1, n_time_steps)
+        num_time_steps = y_test.shape[0]
+        x_test = np.linspace(0, 1, num_time_steps)
         sliding_windows = SlidingWindows(
             x_train_locations=x_test,
             y_train_locations=y_test
@@ -82,7 +82,7 @@ class TestSlidingWindows(unittest.TestCase):
             [-1., 1., 1.],
             [-1., 1., 1.]
         ])
-        true_cov = np.tile(true_cov, (n_time_steps, 1, 1))
+        true_cov = np.tile(true_cov, (num_time_steps, 1, 1))
         assert_array_equal(cov_estimates, true_cov)
 
 

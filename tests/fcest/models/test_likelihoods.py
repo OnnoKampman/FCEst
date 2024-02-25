@@ -20,17 +20,17 @@ class TestLikelihoods(unittest.TestCase):
     """
 
     def test_tensor_computations(
-            self, n_mc_samples: int = 2, n_time_steps: int = 6, 
-            n_time_series: int = 2, nu: int = 3
+            self, n_mc_samples: int = 2, num_time_steps: int = 6, 
+            num_time_series: int = 2, nu: int = 3
     ):
         """
         Parameters
         ----------
         :param n_mc_samples:
             Number of MC samples (S).
-        :param n_time_steps:
+        :param num_time_steps:
             Number of time steps (N).
-        :param n_time_series:
+        :param num_time_series:
             Number of time series (D).
         :param nu:
             Degrees of freedom.
@@ -39,9 +39,9 @@ class TestLikelihoods(unittest.TestCase):
         A = 2 * np.eye(2)
         A[0, 1] = A[1, 0] = -0.1
         A = tf.Variable(A)
-        y_data = np.ones((n_time_steps, n_time_series))
+        y_data = np.ones((num_time_steps, num_time_series))
 
-        f_sample = np.random.random(size=(n_time_steps, n_time_series, nu))
+        f_sample = np.random.random(size=(num_time_steps, num_time_series, nu))
         f_sample = np.tile(f_sample[None, :, :, :], [n_mc_samples, 1, 1, 1])
         f_sample = tf.Variable(f_sample)
 

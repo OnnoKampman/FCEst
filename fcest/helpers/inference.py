@@ -41,8 +41,8 @@ def run_adam(
     :param log_dir:
     :param data:
         A tuple with:
-            x_observed: expected in shape (n_time_steps, 1), i.e. (N, 1).
-            y_observed: expected in shape (n_time_steps, n_time_series), i.e. (N, D).
+            x_observed: expected in shape (num_time_steps, 1), i.e. (N, 1).
+            y_observed: expected in shape (num_time_steps, num_time_series), i.e. (N, D).
     :param train_inducing_variables:
         Whether to train inducing variables.
     :return:

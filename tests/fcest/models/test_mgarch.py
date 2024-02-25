@@ -42,11 +42,11 @@ class TestMGARCH(unittest.TestCase):
 
     @staticmethod
     def _get_dummy_training_data(
-        n_time_series: int = 2, n_time_steps: int = 400
+        num_time_series: int = 2, num_time_steps: int = 400
     ) -> pd.DataFrame:
         np.random.seed(2023)
         return pd.DataFrame(
-            np.random.normal(size=(n_time_steps, n_time_series))
+            np.random.normal(size=(num_time_steps, num_time_series))
         )
 
 
