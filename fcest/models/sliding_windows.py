@@ -149,11 +149,11 @@ class SlidingWindows:
             y_train = self.y_train
 
         # Pad zeros to time series to be able to compute covariances at the edges.
-        n_zeros_to_pad = int(np.floor(window_length / 2))
+        num_zeros_to_pad = int(np.floor(window_length / 2))
         y_train = np.concatenate((
-            np.zeros((n_zeros_to_pad, num_time_series)),
+            np.zeros((num_zeros_to_pad, num_time_series)),
             y_train,
-            np.zeros((n_zeros_to_pad, num_time_series))
+            np.zeros((num_zeros_to_pad, num_time_series))
         ))
 
         estimated_tvfc = np.zeros((num_time_steps, num_time_series, num_time_series))  # empty covariances array to fill
@@ -205,17 +205,17 @@ class SlidingWindows:
             Should be 2 to make sure the window length is always uneven (and thus symmetrical)
         :param eval_location_step_size:
         :return:
-            DataFrame of shape (n_eval_locations, n_proposed_window_lengths).
+            DataFrame of shape (num_eval_locations, num_proposed_window_lengths).
         """
-        n_evaluation_points = self.num_time_steps - self.maximum_proposal_window_length
+        num_evaluation_points = self.num_time_steps - self.maximum_proposal_window_length
 
         proposal_window_length_range = np.arange(
             self.minimum_proposal_window_length, self.maximum_proposal_window_length,
             window_length_step_size
         )
-        n_proposal_window_lengths = len(proposal_window_length_range)
+        num_proposal_window_lengths = len(proposal_window_length_range)
         proposal_window_length_range_seconds = proposal_window_length_range * self.repetition_time
-        logging.info(f"Proposing {n_proposal_window_lengths:d} window lengths (from {self.minimum_proposal_window_length:d} to {self.maximum_proposal_window_length:d}, in steps of {window_length_step_size:d}).")
+        logging.info(f"Proposing {num_proposal_window_lengths:d} window lengths (from {self.minimum_proposal_window_length:d} to {self.maximum_proposal_window_length:d}, in steps of {window_length_step_size:d}).")
 
         x_eval_location_minimum = int((self.maximum_proposal_window_length - 1) / 2)
         x_eval_location_maximum = self.num_time_steps - int((self.maximum_proposal_window_length + 1) / 2)
@@ -223,8 +223,8 @@ class SlidingWindows:
             x_eval_location_minimum, x_eval_location_maximum,
             eval_location_step_size
         )
-        n_eval_locations = len(eval_locations)
-        logging.info(f"Evaluating on {n_eval_locations:d} observations (from position {x_eval_location_minimum:d} to {x_eval_location_maximum:d}).")
+        num_eval_locations = len(eval_locations)
+        logging.info(f"Evaluating on {num_eval_locations:d} observations (from position {x_eval_location_minimum:d} to {x_eval_location_maximum:d}).")
 
         results_df = pd.DataFrame()
         for proposal_window_length in proposal_window_length_range:

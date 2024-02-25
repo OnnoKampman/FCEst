@@ -31,16 +31,16 @@ class HiddenMarkovModel:
         Parameters
         ----------
         :param x_train_locations:
-            Array of expected shape (n_time_steps, 1), i.e. (N, 1)
+            Array of expected shape (num_time_steps, 1), i.e. (N, 1)
         :param y_train_locations:
-            Array of expected shape (n_time_steps, n_time_series), i.e. (N, D)
+            Array of expected shape (num_time_steps, num_time_series), i.e. (N, D)
         :return:
         """
         self.x_train = x_train_locations
         self.y_train = y_train_locations
         assert len(x_train_locations) == len(y_train_locations)
 
-        self.n_time_steps = y_train_locations.shape[0]  # N
-        self.n_time_series = y_train_locations.shape[1]  # D
+        self.num_time_steps = y_train_locations.shape[0]  # N
+        self.num_time_series = y_train_locations.shape[1]  # D
 
         raise NotImplementedError

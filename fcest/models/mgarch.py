@@ -91,11 +91,11 @@ class MGARCH:
             library('rugarch')
             library('rmgarch')
             function(r_time_series){{
-                n_time_steps <- dim(r_time_series)[1]
-                n_time_series <- dim(r_time_series)[2]
+                num_time_steps <- dim(r_time_series)[1]
+                num_time_series <- dim(r_time_series)[2]
                 uspec <- multispec(
                     replicate(
-                        n_time_series,
+                        num_time_series,
                         ugarchspec(
                             mean.model = list(armaOrder = {uspec_mean_model:s}),
                             variance.model = list(garchOrder = {uspec_variance_model:s})
@@ -128,8 +128,8 @@ class MGARCH:
         r_go_garch_code = f"""
             library('rmgarch')
             function(r_time_series){{
-                n_time_steps <- dim(r_time_series)[1]
-                n_time_series <- dim(r_time_series)[2]
+                num_time_steps <- dim(r_time_series)[1]
+                num_time_series <- dim(r_time_series)[2]
                 spec <- gogarchspec(
                     mean.model = list(demean = "constant"),
                     variance.model = list(model = "sGARCH", garchOrder = {gogarchspec_mean_model:s}, submodel = NULL),
@@ -147,6 +147,12 @@ class MGARCH:
             }}
         """
         self.mgarch = ro.r(r_go_garch_code)
+
+    def predict_corr(self) -> np.array:
+        """
+        Returns full TVFC correlation structure.
+        """
+        return self.train_location_covariance_structure
 
     def fit_model(
             self, training_data_df: pd.DataFrame, training_type: str = 'joint'
@@ -202,15 +208,15 @@ class MGARCH:
             Expected of shape (N, D).
         :return:
         """
-        n_time_steps = training_data_df.shape[0]
-        n_time_series = training_data_df.shape[1]
+        num_time_steps = training_data_df.shape[0]
+        num_time_series = training_data_df.shape[1]
 
         # Break DataFrame up into bivariate pairs (i.e. edgewise).
-        interaction_pairs = np.triu_indices(n_time_series, k=1)
+        interaction_pairs = np.triu_indices(num_time_series, k=1)
         interaction_pairs = list(zip(*interaction_pairs))  # list of interaction pairs
 
         # Train each bivariate pair and construct full covariance structure.
-        train_location_covariance_structure = np.zeros((n_time_steps, n_time_series, n_time_series))
+        train_location_covariance_structure = np.zeros((num_time_steps, num_time_series, num_time_series))
         for i_interaction_pair, (ts_i, ts_j) in enumerate(interaction_pairs):
             print(f"Edge {i_interaction_pair+1:d}/{len(interaction_pairs):d}.")
             bivariate_pair_df = training_data_df.iloc[:, [ts_i, ts_j]]
@@ -221,8 +227,8 @@ class MGARCH:
             train_location_covariance_structure[:, ts_j, ts_i] = cov_struc[:, 0, 1]
 
             # Add (mean) variance terms to full covariance structure.
-            train_location_covariance_structure[:, ts_i, ts_i] += cov_struc[:, 0, 0] / (n_time_series - 1)
-            train_location_covariance_structure[:, ts_j, ts_j] += cov_struc[:, 1, 1] / (n_time_series - 1)
+            train_location_covariance_structure[:, ts_i, ts_i] += cov_struc[:, 0, 0] / (num_time_series - 1)
+            train_location_covariance_structure[:, ts_j, ts_j] += cov_struc[:, 1, 1] / (num_time_series - 1)
 
         return train_location_covariance_structure
 

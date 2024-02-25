@@ -20,13 +20,15 @@ class TestLikelihoods(unittest.TestCase):
     """
 
     def test_tensor_computations(
-            self, n_mc_samples: int = 2, num_time_steps: int = 6, 
+            self, num_mc_samples: int = 2, num_time_steps: int = 6, 
             num_time_series: int = 2, nu: int = 3
-    ):
+    ) -> None:
         """
+        Test tensor computations.
+
         Parameters
         ----------
-        :param n_mc_samples:
+        :param num_mc_samples:
             Number of MC samples (S).
         :param num_time_steps:
             Number of time steps (N).
@@ -34,7 +36,6 @@ class TestLikelihoods(unittest.TestCase):
             Number of time series (D).
         :param nu:
             Degrees of freedom.
-        :return:
         """
         A = 2 * np.eye(2)
         A[0, 1] = A[1, 0] = -0.1
@@ -42,7 +43,7 @@ class TestLikelihoods(unittest.TestCase):
         y_data = np.ones((num_time_steps, num_time_series))
 
         f_sample = np.random.random(size=(num_time_steps, num_time_series, nu))
-        f_sample = np.tile(f_sample[None, :, :, :], [n_mc_samples, 1, 1, 1])
+        f_sample = np.tile(f_sample[None, :, :, :], [num_mc_samples, 1, 1, 1])
         f_sample = tf.Variable(f_sample)
 
         af = tf.matmul(A, f_sample)
@@ -66,16 +67,17 @@ class TestLikelihoods(unittest.TestCase):
         # Test different ways to compute the same tensor.
         yaffay_1 = tf.matmul(yaffa_1, y_data, transpose_b=True)
         yaffay_1 = tf.math.reduce_mean(yaffay_1, axis=2)
-        y_data_tiled = tf.tile(y_data[None, :, :, None], [n_mc_samples, 1, 1, 1])  # (S, N, D, 1)
+        y_data_tiled = tf.tile(y_data[None, :, :, None], [num_mc_samples, 1, 1, 1])  # (S, N, D, 1)
         L_solve_y = tf.linalg.triangular_solve(L, y_data_tiled, lower=True)
         yaffay_2 = tf.math.reduce_sum(L_solve_y ** 2, axis=(2, 3))
         assert_array_almost_equal(yaffay_1, yaffay_2)
 
     def test_wishart_process_likelihood(self):
+
         wishart_process_likelihood = WishartProcessLikelihood(
             D=2,
             nu=2,
-            n_mc_samples=7,
+            num_mc_samples=7,
             A_scale_matrix_option='train_full_matrix',
             train_additive_noise=True
         )
