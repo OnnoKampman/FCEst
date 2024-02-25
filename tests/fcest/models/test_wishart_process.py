@@ -40,7 +40,7 @@ class TestWishartProcess(unittest.TestCase):
         k = gpflow.kernels.Matern52()
         m = SparseVariationalWishartProcess(
             D=y.shape[1],
-            Z=np.arange(y.shape[0]),
+            Z=np.arange(y.shape[0]).reshape(-1, 1),
             nu=y.shape[1],
             kernel=k,
         )
