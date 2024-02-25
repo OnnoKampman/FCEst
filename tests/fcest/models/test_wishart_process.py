@@ -20,15 +20,18 @@ class TestWishartProcess(unittest.TestCase):
     @staticmethod
     def _generate_dummy_data() -> (np.array, np.array):
 
-        n_time_series = 2
-        n_time_steps = 7
+        num_time_series = 2
+        num_time_steps = 7
 
-        x = np.linspace(0, 1, n_time_steps).reshape(-1, 1)
-        y = np.random.random(size=(n_time_steps, n_time_series))
+        x = np.linspace(0, 1, num_time_steps).reshape(-1, 1)
+        y = np.random.random(size=(num_time_steps, num_time_series))
 
         return x, y
 
-    def test_sparse_variational_wishart_process(self):
+    def test_sparse_variational_wishart_process(
+        self,
+        num_iterations: int = 3,
+    ):
         """
         Test instantiation of SparseVariationalWishartProcess.
         """
@@ -41,17 +44,24 @@ class TestWishartProcess(unittest.TestCase):
             nu=y.shape[1],
             kernel=k,
         )
-        maxiter = ci_niter(3)
-        # logf = run_adam(
-        #     "SVWP",
-        #     m,
-        #     data=(x, y),
-        #     iterations=maxiter,
-        #     log_interval=100,
-        #     log_dir=None,
-        # )
 
-    def test_variational_wishart_process(self):
+        maxiter = ci_niter(num_iterations)
+        logf = run_adam(
+            model_type="SVWP",
+            model=m,
+            data=(x, y),
+            iterations=maxiter,
+            log_interval=100,
+            log_dir=None,
+        )
+
+        self.assertEqual(type(logf), list)
+        self.assertEqual(len(logf), maxiter)
+
+    def test_variational_wishart_process(
+        self,
+        num_iterations: int = 3,
+    ):
         """
         Test instantiation of VariationalWishartProcess.
         """
@@ -64,14 +74,18 @@ class TestWishartProcess(unittest.TestCase):
             nu=y.shape[1],
             kernel=k,
         )
-        maxiter = ci_niter(3)
+
+        maxiter = ci_niter(num_iterations)
         logf = run_adam(
-            "VWP",
-            m,
+            model_type="VWP",
+            model=m,
             iterations=maxiter,
             log_interval=100,
             log_dir=None,
         )
+
+        self.assertEqual(type(logf), list)
+        self.assertEqual(len(logf), maxiter)
 
 
 if __name__ == "__main__":
