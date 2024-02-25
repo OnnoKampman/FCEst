@@ -5,7 +5,7 @@ import gpflow
 from gpflow.ci_utils import ci_niter
 import numpy as np
 
-from fcest.helpers.inference import run_adam_svwp, run_adam_vwp
+from fcest.helpers.inference import run_adam
 from fcest.models.wishart_process import SparseVariationalWishartProcess, VariationalWishartProcess
 
 logging.basicConfig(
@@ -42,7 +42,8 @@ class TestWishartProcess(unittest.TestCase):
             kernel=k,
         )
         maxiter = ci_niter(3)
-        # logf = run_adam_svwp(
+        # logf = run_adam(
+        #     "SVWP",
         #     m,
         #     data=(x, y),
         #     iterations=maxiter,
@@ -64,7 +65,8 @@ class TestWishartProcess(unittest.TestCase):
             kernel=k,
         )
         maxiter = ci_niter(3)
-        logf = run_adam_vwp(
+        logf = run_adam(
+            "VWP",
             m,
             iterations=maxiter,
             log_interval=100,
