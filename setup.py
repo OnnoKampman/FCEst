@@ -24,7 +24,7 @@ setup(
     url='https://github.com/OnnoKampman/FCEst',
     packages=packages,
     install_requires=[
-        'gpflow==2.6.0',
+        'gpflow==2.6.1',
         'numpy',
         'pandas==1.5.3',
         'rpy2==3.4.5',
