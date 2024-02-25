@@ -2,7 +2,7 @@ import logging
 import unittest
 
 import gpflow
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 import numpy as np
 
 from fcest.helpers.inference import run_adam
@@ -45,7 +45,7 @@ class TestWishartProcess(unittest.TestCase):
             kernel=k,
         )
 
-        maxiter = ci_niter(num_iterations)
+        maxiter = reduce_in_tests(num_iterations)
         logf = run_adam(
             model_type="SVWP",
             model=m,
@@ -75,7 +75,7 @@ class TestWishartProcess(unittest.TestCase):
             kernel=k,
         )
 
-        maxiter = ci_niter(num_iterations)
+        maxiter = reduce_in_tests(num_iterations)
         logf = run_adam(
             model_type="VWP",
             model=m,
