@@ -51,7 +51,9 @@ def fit_and_extract_ar1_param(full_covariance_structure: np.array) -> np.array:
     Summarize estimated TVFC by taking AR(1) component of each time series.
     Diagonal terms are set to zero at the moment.
     """
-    indices = get_all_lower_triangular_indices_tuples(n_time_series=full_covariance_structure.shape[1])
+    indices = get_all_lower_triangular_indices_tuples(
+        num_time_series=full_covariance_structure.shape[1]
+    )
 
     ar1_coefficients = np.zeros(
         shape=(full_covariance_structure.shape[1], full_covariance_structure.shape[2])
@@ -82,17 +84,17 @@ def compute_rate_of_change(full_covariance_structure: np.array) -> np.array:
     :return:
         array of shape (D, D)
     """
-    n_time_series = full_covariance_structure.shape[1]  # D
+    num_time_series = full_covariance_structure.shape[1]  # D
 
-    average_rate_of_change = np.zeros(shape=(n_time_series, n_time_series))  # (D, D)
-    n_changes = full_covariance_structure.shape[0] - 1
-    for i_time_step in np.arange(n_changes):
+    average_rate_of_change = np.zeros(shape=(num_time_series, num_time_series))  # (D, D)
+    num_changes = full_covariance_structure.shape[0] - 1
+    for i_time_step in np.arange(num_changes):
         roc = _rate_of_change(
             current_value=full_covariance_structure[i_time_step+1, :, :],
             previous_value=full_covariance_structure[i_time_step, :, :]
         )
         average_rate_of_change += roc
-    average_rate_of_change /= n_changes
+    average_rate_of_change /= num_changes
     return average_rate_of_change
 
 

@@ -51,14 +51,14 @@ class VariationalWishartProcess(models.vgp.VGP):
             self,
             x_observed: np.array,
             y_observed: np.array,
-            nu: int,
+            nu: int = None,
             kernel: Kernel = None,
-            n_mc_samples: int = 5,
+            num_mc_samples: int = 5,
             A_scale_matrix_option: str = 'train_full_matrix',
             train_additive_noise: bool = True,
             kernel_lengthscale_init: float = 0.3,
             q_sqrt_init: float = 0.001,
-            n_factors: int = None,
+            num_factors: int = None,
     ) -> None:
         """
         Initialize Variational Wishart Process (VWP) model.
@@ -66,16 +66,16 @@ class VariationalWishartProcess(models.vgp.VGP):
         Parameters
         ----------
         :param x_observed:
-            Expected in shape (n_time_steps, 1), i.e. (N, 1).
+            Expected in shape (num_time_steps, 1), i.e. (N, 1).
         :param y_observed:
-            Expected in shape (n_time_steps, n_time_series), i.e. (N, D).
+            Expected in shape (num_time_steps, num_time_series), i.e. (N, D).
             Expected to have (approximately) mean zero.
         :param nu:
             Degrees of freedom.
             Empirical results suggest setting nu = D is optimal.
         :param kernel:
             GPflow kernel.
-        :param n_mc_samples:
+        :param num_mc_samples:
             The number of Monte Carlo samples used to approximate the ELBO.
             In the paper this is R, in the code sometimes S.
         :param A_scale_matrix_option:
@@ -84,29 +84,33 @@ class VariationalWishartProcess(models.vgp.VGP):
         :param kernel_lengthscale_init:
         :param q_sqrt_init:
             Empirical results suggest a value of 0.001 is slightly better than 0.01.
-        :param n_factors:
+        :param num_factors:
         """
         self.D = y_observed.shape[1]
         logging.info(f"Found {self.D:d} time series (D = {self.D:d}).")
-        self.nu = nu
 
-        if n_factors is not None:
+        if num_factors is not None:
             raise NotImplementedError("Factorized Wishart process not implemented yet.")
+
+        if nu is None:
+            nu = self.D
+        self.nu = nu
 
         if kernel is None:
             kernel = gpflow.kernels.Matern52()
 
+        likel = WishartProcessLikelihood(
+            D=self.D,
+            nu=nu,
+            num_mc_samples=num_mc_samples,
+            A_scale_matrix_option=A_scale_matrix_option,
+            train_additive_noise=train_additive_noise,
+        )
         super().__init__(
             data=(x_observed, y_observed),
             kernel=kernel,
-            likelihood=WishartProcessLikelihood(
-                D=self.D,
-                nu=nu,
-                n_mc_samples=n_mc_samples,
-                A_scale_matrix_option=A_scale_matrix_option,
-                train_additive_noise=train_additive_noise
-            ),
-            num_latent_gps=self.D * nu  # number of outputs (multi−output GP)
+            likelihood=likel,
+            num_latent_gps=likel.latent_dim,  # number of outputs (multi−output GP)
         )
         self._initialize_parameters(
             kernel_lengthscale_init=kernel_lengthscale_init,
@@ -114,7 +118,7 @@ class VariationalWishartProcess(models.vgp.VGP):
         )
 
     def predict_cov(
-            self, x_new: np.array, n_mc_samples: int = 300
+            self, x_new: np.array, num_mc_samples: int = 300
     ) -> (tf.Tensor, tf.Tensor):
         """
         The main attribute to predict covariance matrices at any point in time.
@@ -122,11 +126,11 @@ class VariationalWishartProcess(models.vgp.VGP):
         Parameters
         ----------
         :param x_new:
-        :param n_mc_samples:
+        :param num_mc_samples:
             Note: Heaukulani2019 used 300 MC samples for prediction.
         :return:
         """
-        cov_samples = self._get_cov_samples(x_new, n_mc_samples)  # (S_new, N_new, D, D)
+        cov_samples = self._get_cov_samples(x_new, num_mc_samples)  # (S_new, N_new, D, D)
 
         cov_mean = tf.math.reduce_mean(cov_samples, axis=0)  # (N_new, D, D)
         assert are_all_positive_definite(cov_mean)
@@ -135,14 +139,21 @@ class VariationalWishartProcess(models.vgp.VGP):
         return cov_mean, cov_stddev
 
     def predict_corr(
-            self, x_new: np.array, n_mc_samples: int = 300
+            self, x_new: np.array, num_mc_samples: int = 300
     ) -> (tf.Tensor, tf.Tensor):
         """
         The main attribute to predict correlation matrices at any point in time.
 
         TODO: how should we convert sampling uncertainty to correlation confidence interval?
+
+        Parameters
+        ----------
+        :param x_new:
+        :param num_mc_samples:
+        :return:
+            Tuple of (mean, stddev) of correlation matrices.
         """
-        cov_samples = self._get_cov_samples(x_new, n_mc_samples)  # (S_new, N_new, D, D)
+        cov_samples = self._get_cov_samples(x_new, num_mc_samples)  # (S_new, N_new, D, D)
 
         corr_samples = convert_tensor_to_correlation(cov_samples)  # (S_new, N_new, D, D)
 
@@ -152,7 +163,7 @@ class VariationalWishartProcess(models.vgp.VGP):
         return corr_mean, corr_stddev
 
     def _get_cov_samples(
-            self, x_new: np.array, n_mc_samples: int = 300
+            self, x_new: np.array, num_mc_samples: int = 300
     ) -> tf.Tensor:
         """
         Prediction routine for covariance matrices.
@@ -166,22 +177,22 @@ class VariationalWishartProcess(models.vgp.VGP):
         :param x_new:
             The (new) locations to get covariance matrix for.
             Can be different from those in training data.
-        :param n_mc_samples:
+        :param num_mc_samples:
             S_new: number of Monte Carlo samples to approximate covariance matrix with.
             300 samples are used in previous paper.
         :return:
             AFFA here are the constructed covariance matrix samples.
         """
-        n_test_time_steps = x_new.shape[0]
+        num_test_time_steps = x_new.shape[0]
 
         # TODO: maybe we can get f_samples instead of f?
         f_mean_new, f_variance_new = self.predict_f(x_new)  # (N_new, D * nu), (N_new, D * nu)
-        f_mean_new = tf.reshape(f_mean_new, [n_test_time_steps, self.D, -1])  # (N_new, D, nu)
-        f_variance_new = tf.reshape(f_variance_new, [n_test_time_steps, self.D, -1])  # (N_new, D, nu)
+        f_mean_new = tf.reshape(f_mean_new, [num_test_time_steps, self.D, -1])  # (N_new, D, nu)
+        f_variance_new = tf.reshape(f_variance_new, [num_test_time_steps, self.D, -1])  # (N_new, D, nu)
         f_stddev_new = f_variance_new ** 0.5  # (N_new, D, nu)
 
         f_sample = tf.random.normal(
-            (n_mc_samples, n_test_time_steps, self.D, self.nu),
+            (num_mc_samples, num_test_time_steps, self.D, self.nu),
             mean=0.0, stddev=1.0,
             dtype=tf.dtypes.float64
         ) * f_stddev_new + f_mean_new  # (S_new, N_new, D, nu)
@@ -297,18 +308,20 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
             self,
             D: int,
             Z: np.array,
-            nu: int,
+            nu: int = None,
             kernel: Kernel = gpflow.kernels.Matern52(),
-            n_mc_samples: int = 5,
+            num_mc_samples: int = 5,
             A_scale_matrix_option: str = 'train_full_matrix',
             train_additive_noise: bool = True,
             kernel_lengthscale_init: float = 0.3,
             q_sqrt_init: float = 0.001,
-            n_factors: int = None,
-            verbose: bool = True
+            num_factors: int = None,
+            verbose: bool = True,
     ) -> None:
         """
         Initialize Sparse Variational Wishart Process (SVWP) model.
+
+        The model needs to be instructed about the number of latent GPs by passing `num_latent_gps=likelihood.latent_dim`.
 
         Parameters
         ----------
@@ -319,45 +332,53 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         :param nu:
             Degrees of freedom.
         :param kernel:
-        :param n_mc_samples:
+        :param num_mc_samples:
             Number of Monte Carlo samples taken to approximate the ELBO.
         :param A_scale_matrix_option:
         :param train_additive_noise:
         :param kernel_lengthscale_init:
         :param q_sqrt_init:
-        :param n_factors:
+        :param num_factors:
             Number of factors to use in the factored model.
             If None, the non-factored model will be instantiated.
         :param verbose:
         """
         self.D = D
         logging.info(f"Found {self.D:d} time series (D = {self.D:d}).")
+
+        assert len(Z.shape) == 2
+
+        if nu is None:
+            nu = self.D
         self.nu = nu
 
-        if n_factors is not None:
+        if num_factors is not None:
             likel = FactoredWishartProcessLikelihood()
         else:
             likel = WishartProcessLikelihood(
                 D=self.D,
                 nu=nu,
-                n_mc_samples=n_mc_samples,
+                num_mc_samples=num_mc_samples,
                 A_scale_matrix_option=A_scale_matrix_option,
                 train_additive_noise=train_additive_noise,
-                verbose=verbose
+                verbose=verbose,
             )
+            assert likel.latent_dim == self.D * nu
         super().__init__(
             kernel=kernel,
             likelihood=likel,
             inducing_variable=Z,
-            num_latent_gps=self.D * nu  # number of outputs (multi−output GP)
+            num_latent_gps=likel.latent_dim,  # number of outputs (multi−output GP)
         )
         self._initialize_parameters(
             kernel_lengthscale_init=kernel_lengthscale_init,
-            q_sqrt_init=q_sqrt_init
+            q_sqrt_init=q_sqrt_init,
         )
 
     def predict_cov(
-            self, x_new: np.array, n_mc_samples: int = 300
+            self,
+            x_new: np.array,
+            num_mc_samples: int = 300,
     ) -> (tf.Tensor, tf.Tensor):
         """
         The main attribute to predict covariance matrices at any point in time.
@@ -367,10 +388,11 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         :param x_new:
             The test locations where we want to predict the covariance matrices.
             Array of shape (x_new, 1).
-        :param n_mc_samples:
+        :param num_mc_samples:
         :return:
+            Tuple of (mean, stddev) of covariance matrices.
         """
-        cov_samples = self._get_cov_samples(x_new, n_mc_samples)  # (S_new, N_new, D, D)
+        cov_samples = self._get_cov_samples(x_new, num_mc_samples)  # (S_new, N_new, D, D)
 
         cov_mean = tf.math.reduce_mean(cov_samples, axis=0)  # (N_new, D, D)
         assert are_all_positive_definite(cov_mean)
@@ -379,30 +401,40 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         return cov_mean, cov_stddev
 
     def predict_cov_samples(
-            self, x_new: np.array, n_mc_samples: int = 300
+            self, x_new: np.array, num_mc_samples: int = 300
     ) -> tf.Tensor:
         """
         TODO: we don't use this
+
         The main attribute to predict covariance matrices at any point in time.
 
         Parameters
         ----------
         :param x_new:
-        :param n_mc_samples:
+        :param num_mc_samples:
         :return:
         """
-        cov_samples = self._get_cov_samples(x_new, n_mc_samples)  # (S_new, N_new, D, D)
+        cov_samples = self._get_cov_samples(x_new, num_mc_samples)  # (S_new, N_new, D, D)
         return cov_samples
 
     def predict_corr(
-            self, x_new: np.array, n_mc_samples: int = 300
+            self,
+            x_new: np.array,
+            num_mc_samples: int = 300,
     ) -> (tf.Tensor, tf.Tensor):
         """
         The main attribute to predict correlation matrices at any point in time.
 
         TODO: how should we convert sampling uncertainty to correlation confidence interval?
+
+        Parameters
+        ----------
+        :param x_new:
+        :param num_mc_samples:
+        :return:
+            Tuple of (mean, stddev) of correlation matrices.
         """
-        cov_samples = self._get_cov_samples(x_new, n_mc_samples)  # (S_new, N_new, D, D)
+        cov_samples = self._get_cov_samples(x_new, num_mc_samples)  # (S_new, N_new, D, D)
 
         corr_samples = convert_tensor_to_correlation(cov_samples)  # (S_new, N_new, D, D)
 
@@ -412,7 +444,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         return corr_mean, corr_stddev
 
     def _get_cov_samples(
-            self, x_new: np.array, n_mc_samples: int = 300
+            self, x_new: np.array, num_mc_samples: int = 300
     ) -> tf.Tensor:
         """
         Prediction routine for covariance matrices.
@@ -424,22 +456,22 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         :param x_new:
             The (new) locations to get covariance matrix for.
             Can be different from those in training data.
-        :param n_mc_samples:
+        :param num_mc_samples:
             S_new: number of Monte Carlo samples to approximate covariance matrix with.
             300 samples are used in previous paper.
         :return:
             AFFA here are the constructed covariance matrix samples.
         """
-        n_test_time_steps = x_new.shape[0]
+        num_test_time_steps = x_new.shape[0]
 
         # TODO: maybe we can get f_samples instead of f?
         f_mean_new, f_variance_new = self.predict_f(x_new)  # (N_new, D * nu), (N_new, D * nu)
-        f_mean_new = tf.reshape(f_mean_new, [n_test_time_steps, self.D, -1])  # (N_new, D, nu)
-        f_variance_new = tf.reshape(f_variance_new, [n_test_time_steps, self.D, -1])  # (N_new, D, nu)
+        f_mean_new = tf.reshape(f_mean_new, [num_test_time_steps, self.D, -1])  # (N_new, D, nu)
+        f_variance_new = tf.reshape(f_variance_new, [num_test_time_steps, self.D, -1])  # (N_new, D, nu)
         f_stddev_new = f_variance_new ** 0.5  # (N_new, D, nu)
 
         f_sample = tf.random.normal(
-            (n_mc_samples, n_test_time_steps, self.D, self.nu),
+            (num_mc_samples, num_test_time_steps, self.D, self.nu),
             mean=0.0, stddev=1.0,
             dtype=tf.dtypes.float64
         ) * f_stddev_new + f_mean_new  # (S_new, N_new, D, nu)
@@ -495,7 +527,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
             'kernel_lengthscales': float(self.kernel.lengthscales.numpy()),
             'Z': self.inducing_variable.Z.numpy().tolist(),
             'q_mu': self.q_mu.numpy().tolist(),
-            'q_sqrt': self.q_sqrt.numpy().tolist()  # (D*nu, N, N) or (D*nu, Z, Z)
+            'q_sqrt': self.q_sqrt.numpy().tolist(),  # (D*nu, N, N) or (D*nu, Z, Z)
         }
         if not os.path.exists(savedir):
             os.makedirs(savedir)

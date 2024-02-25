@@ -2,10 +2,10 @@ import logging
 import unittest
 
 import gpflow
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 import numpy as np
 
-from fcest.helpers.inference import run_adam_svwp, run_adam_vwp
+from fcest.helpers.inference import run_adam
 from fcest.models.wishart_process import SparseVariationalWishartProcess, VariationalWishartProcess
 
 logging.basicConfig(
@@ -17,18 +17,10 @@ logging.basicConfig(
 
 class TestWishartProcess(unittest.TestCase):
 
-    @staticmethod
-    def _generate_dummy_data() -> (np.array, np.array):
-
-        n_time_series = 2
-        n_time_steps = 7
-
-        x = np.linspace(0, 1, n_time_steps).reshape(-1, 1)
-        y = np.random.random(size=(n_time_steps, n_time_series))
-
-        return x, y
-
-    def test_sparse_variational_wishart_process(self):
+    def test_sparse_variational_wishart_process(
+        self,
+        num_iterations: int = 3,
+    ) -> None:
         """
         Test instantiation of SparseVariationalWishartProcess.
         """
@@ -37,20 +29,28 @@ class TestWishartProcess(unittest.TestCase):
         k = gpflow.kernels.Matern52()
         m = SparseVariationalWishartProcess(
             D=y.shape[1],
-            Z=np.arange(y.shape[0]),
+            Z=np.arange(y.shape[0]).reshape(-1, 1),
             nu=y.shape[1],
             kernel=k,
         )
-        maxiter = ci_niter(3)
-        # logf = run_adam_svwp(
-        #     m,
-        #     data=(x, y),
-        #     iterations=maxiter,
-        #     log_interval=100,
-        #     log_dir=None,
-        # )
 
-    def test_variational_wishart_process(self):
+        maxiter = reduce_in_tests(num_iterations)
+        logf = run_adam(
+            model_type="SVWP",
+            model=m,
+            data=(x, y),
+            iterations=maxiter,
+            log_interval=1,
+            log_dir=None,
+        )
+
+        self.assertEqual(type(logf), list)
+        self.assertEqual(len(logf), maxiter)
+
+    def test_variational_wishart_process(
+        self,
+        num_iterations: int = 3,
+    ) -> None:
         """
         Test instantiation of VariationalWishartProcess.
         """
@@ -63,13 +63,31 @@ class TestWishartProcess(unittest.TestCase):
             nu=y.shape[1],
             kernel=k,
         )
-        maxiter = ci_niter(3)
-        logf = run_adam_vwp(
-            m,
+
+        maxiter = reduce_in_tests(num_iterations)
+        logf = run_adam(
+            model_type="VWP",
+            model=m,
             iterations=maxiter,
-            log_interval=100,
+            log_interval=1,
             log_dir=None,
         )
+
+        self.assertEqual(type(logf), list)
+        self.assertEqual(len(logf), maxiter)
+
+    @staticmethod
+    def _generate_dummy_data() -> (np.array, np.array):
+        """
+        Generate dummy data for testing.
+        """
+        num_time_series = 2
+        num_time_steps = 7
+
+        x = np.linspace(0, 1, num_time_steps).reshape(-1, 1)
+        y = np.random.random(size=(num_time_steps, num_time_series))
+
+        return x, y
 
 
 if __name__ == "__main__":

@@ -94,18 +94,18 @@ def zscore_estimates(tvfc_estimates_array: np.array) -> np.array:
     return tvfc_estimates_array - np.mean(tvfc_estimates_array) / np.std(tvfc_estimates_array)
 
 
-def get_all_lower_triangular_indices_tuples(n_time_series: int) -> list:
+def get_all_lower_triangular_indices_tuples(num_time_series: int) -> list:
     """
     Returns a list of tuples, where each tuple contains the indices of one of the lower
     triangular elements of a matrix.
 
     Parameters
     ----------
-    :param n_time_series:
+    :param num_time_series:
     :return:
     """
     return list(
-        zip(*np.tril_indices(n_time_series, k=-1))
+        zip(*np.tril_indices(num_time_series, k=-1))
     )
 
 
