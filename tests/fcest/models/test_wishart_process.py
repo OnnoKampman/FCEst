@@ -17,17 +17,6 @@ logging.basicConfig(
 
 class TestWishartProcess(unittest.TestCase):
 
-    @staticmethod
-    def _generate_dummy_data() -> (np.array, np.array):
-
-        num_time_series = 2
-        num_time_steps = 7
-
-        x = np.linspace(0, 1, num_time_steps).reshape(-1, 1)
-        y = np.random.random(size=(num_time_steps, num_time_series))
-
-        return x, y
-
     def test_sparse_variational_wishart_process(
         self,
         num_iterations: int = 3,
@@ -86,6 +75,19 @@ class TestWishartProcess(unittest.TestCase):
 
         self.assertEqual(type(logf), list)
         self.assertEqual(len(logf), maxiter)
+
+    @staticmethod
+    def _generate_dummy_data() -> (np.array, np.array):
+        """
+        Generate dummy data for testing.
+        """
+        num_time_series = 2
+        num_time_steps = 7
+
+        x = np.linspace(0, 1, num_time_steps).reshape(-1, 1)
+        y = np.random.random(size=(num_time_steps, num_time_series))
+
+        return x, y
 
 
 if __name__ == "__main__":
