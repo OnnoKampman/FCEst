@@ -36,7 +36,7 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
             self,
             D: int,
             nu: int = None,
-            n_mc_samples: int = 2,
+            num_mc_samples: int = 2,
             A_scale_matrix_option: str = 'train_full_matrix',
             train_additive_noise: bool = False,
             additive_noise_matrix_init: float = 0.01,
@@ -51,7 +51,7 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
             The number of time series.
         :param nu: 
             Degrees of freedom.
-        :param n_mc_samples:
+        :param num_mc_samples:
             Number of Monte Carlo samples used to approximate gradients (S).
         :param A_scale_matrix_option:
         :param train_additive_noise:
@@ -72,7 +72,7 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         )
         self.D = D
         self.nu = nu
-        self.n_mc_samples = n_mc_samples
+        self.num_mc_samples = num_mc_samples
         self.A_scale_matrix = self._set_A_scale_matrix(option=A_scale_matrix_option)  # (D, D)
 
         # The additive noise matrix must have positive diagonal values, which this softplus construction guarantees.
@@ -91,23 +91,36 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
             print('initial additive part: ', self.additive_part)
 
     def variational_expectations(
-            self, f_mean: tf.Tensor, f_variance: tf.Tensor, y_data: np.array
+            self,
+            x_data: np.array,
+            f_mean: tf.Tensor,
+            f_variance: tf.Tensor,
+            y_data: np.array,
     ) -> tf.Tensor:
         """
         This returns the expectation of log likelihood part of the ELBO.
         That is, it computes log p(Y | variational parameters).
         This does not include the KL term.
+
         Models inheriting VGP are required to have this signature.
+        Overwriting this method is at the core of our custom likelihood.
 
         Parameters
         ----------
+        :param x_data:
+            Input tensor.
+            NumPy array of shape (num_time_steps, 1) or (N, 1).
         :param f_mean:
+            Mean function evaluation tensor.
             (N, D * nu), the parameters of the latent GP points F
         :param f_variance:
+            Variance of function evaluation tensor.
             (N, D * nu), the parameters of the latent GP points F
         :param y_data:
+            Observation tensor.
             NumPy array of shape (num_time_steps, num_time_series) or (N, D).
         :return:
+            Expected log density of the data given q(F).
             Tensor of shape (N, ); logp, log probability density of the data.
         """
         N, _ = y_data.shape
@@ -115,28 +128,46 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
 
         # produce (multiple) samples of F, the matrix with latent GP points at input locations X
         f_sample = tf.random.normal(
-            (self.n_mc_samples, N, self.D * self.nu),
+            (self.num_mc_samples, N, self.D * self.nu),
             mean=0.0, stddev=1.0,
             dtype=tf.dtypes.float64
         ) * f_stddev + f_mean  # (S, N, D * nu)
-        f_sample = tf.reshape(f_sample, (self.n_mc_samples, N, self.D, -1))  # (S, N, D, nu)
+        f_sample = tf.reshape(f_sample, (self.num_mc_samples, N, self.D, -1))  # (S, N, D, nu)
 
         # finally, the likelihood variant will use these to compute the appropriate log density
-        return self._log_prob(f_sample, y_data)  # (N, )
+        return self._log_prob(
+            x_data,
+            f_sample,
+            y_data,
+        )  # (N, )
 
-    def _log_prob(self, f_sample: tf.Tensor, y_data: np.array) -> tf.Tensor:
+    def _log_prob(
+        self,
+        x_data: np.array,
+        f_sample: tf.Tensor,
+        y_data: np.array,
+    ) -> tf.Tensor:
         """
         Compute the (Monte Carlo estimate of) the log likelihood given samples of the GPs.
 
+        This overrides the method in MonteCarloLikelihood.
+
         Parameters
         ----------
+        :param x_data:
+            Input tensor.
+            NumPy array of shape (num_time_steps, 1) or (N, 1).
         :param f_sample:
-            (n_mc_samples, num_time_steps, num_time_series, degrees_of_freedom) or (S, N, D, nu) -
+            Function evaluation tensor.
+            (num_mc_samples, num_time_steps, num_time_series, degrees_of_freedom) or (S, N, D, nu) -
         :param y_data:
+            Observation tensor.
             (num_time_steps, num_time_series) or (N, D) -
         :return:
             (num_time_steps, ) or (N, )
         """
+        assert isinstance(f_sample, tf.Tensor)
+
         # compute the constant term of the log likelihood
         constant_term = - self.D / 2 * tf.math.log(2 * tf.constant(np.pi, dtype=tf.float64))
 
@@ -164,8 +195,8 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         # compute the `Y * inv(cov) * Y` component of the log likelihood
         # we avoid computing the matrix inverse for computational stability
         # the tiling below is inefficient, but can't get the shapes to play well with cholesky_solve otherwise
-        n_samples = tf.shape(f_sample)[0]  # could be 1 when computing MAP test metric
-        y_data = tf.tile(y_data[None, :, :, None], [n_samples, 1, 1, 1])
+        num_samples = tf.shape(f_sample)[0]  # could be 1 when computing MAP test metric
+        y_data = tf.tile(y_data[None, :, :, None], [num_samples, 1, 1, 1])
         L_solve_y = tf.linalg.triangular_solve(L, y_data, lower=True)  # (S, N, D, 1)
         yaffay = tf.reduce_sum(L_solve_y ** 2.0, axis=(2, 3))  # (S, N)
 
