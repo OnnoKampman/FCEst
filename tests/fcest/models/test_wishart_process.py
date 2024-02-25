@@ -31,7 +31,7 @@ class TestWishartProcess(unittest.TestCase):
     def test_sparse_variational_wishart_process(
         self,
         num_iterations: int = 3,
-    ):
+    ) -> None:
         """
         Test instantiation of SparseVariationalWishartProcess.
         """
@@ -51,7 +51,7 @@ class TestWishartProcess(unittest.TestCase):
             model=m,
             data=(x, y),
             iterations=maxiter,
-            log_interval=100,
+            log_interval=1,
             log_dir=None,
         )
 
@@ -61,7 +61,7 @@ class TestWishartProcess(unittest.TestCase):
     def test_variational_wishart_process(
         self,
         num_iterations: int = 3,
-    ):
+    ) -> None:
         """
         Test instantiation of VariationalWishartProcess.
         """
@@ -80,7 +80,7 @@ class TestWishartProcess(unittest.TestCase):
             model_type="VWP",
             model=m,
             iterations=maxiter,
-            log_interval=100,
+            log_interval=1,
             log_dir=None,
         )
 
