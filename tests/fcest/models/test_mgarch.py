@@ -29,12 +29,12 @@ class TestMGARCH(unittest.TestCase):
             mgarch_type='DCC'
         )
         m.fit_model(
-            training_data_df=self._get_dummy_training_data(),
+            training_data_y=self._get_dummy_training_data(),
             training_type='joint'
         )
         cov_structure_joint = m.train_location_covariance_structure
         m.fit_model(
-            training_data_df=self._get_dummy_training_data(),
+            training_data_y=self._get_dummy_training_data(),
             training_type='pairwise'
         )
         cov_structure_pairwise = m.train_location_covariance_structure
@@ -43,10 +43,13 @@ class TestMGARCH(unittest.TestCase):
     @staticmethod
     def _get_dummy_training_data(
         num_time_series: int = 2, num_time_steps: int = 400
-    ) -> pd.DataFrame:
+    ) -> np.array:
+        """
+        Get dummy training data.
+        """
         np.random.seed(2023)
-        return pd.DataFrame(
-            np.random.normal(size=(num_time_steps, num_time_series))
+        return np.random.normal(
+            size=(num_time_steps, num_time_series)
         )
 
 
