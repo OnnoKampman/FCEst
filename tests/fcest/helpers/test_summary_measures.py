@@ -12,6 +12,9 @@ class TestSummaryMeasures(unittest.TestCase):
     """
 
     def test_summarize_tvfc_estimates(self):
+        """
+        Test TVFC summary measure computation.
+        """
         test_covariance_structure = self._simulate_d2_time_series()
         test_summarized_covariance_structure = summarize_tvfc_estimates(
             full_covariance_structure=test_covariance_structure,
@@ -49,6 +52,7 @@ class TestSummaryMeasures(unittest.TestCase):
         """
         Get dummy time series.
         This has unit variances, so that the correlation structure is identical to it.
+
         :return: array of shape (N, D, D)
         """
         N = 1200
@@ -69,6 +73,7 @@ class TestSummaryMeasures(unittest.TestCase):
         """
         Get dummy time series.
         This has unit variances, so that the correlation structure is identical to it.
+
         :return: array of shape (N, D, D)
         """
         N = 1200

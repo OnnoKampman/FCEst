@@ -14,7 +14,8 @@ __all__ = [
 
 
 def summarize_tvfc_estimates(
-        full_covariance_structure: np.array, tvfc_summary_metric: str
+        full_covariance_structure: np.array,
+        tvfc_summary_metric: str,
 ) -> np.array:
     """
     Summarize a full TVFC covariance structure over temporal axis.
@@ -50,6 +51,13 @@ def fit_and_extract_ar1_param(full_covariance_structure: np.array) -> np.array:
     """
     Summarize estimated TVFC by taking AR(1) component of each time series.
     Diagonal terms are set to zero at the moment.
+
+    Parameters
+    ----------
+    :param full_covariance_structure:
+        Array of shape (N, D, D).
+    :return:
+        array of shape (D, D).
     """
     indices = get_all_lower_triangular_indices_tuples(
         num_time_series=full_covariance_structure.shape[1]
@@ -99,7 +107,8 @@ def compute_rate_of_change(full_covariance_structure: np.array) -> np.array:
 
 
 def _rate_of_change(
-        current_value: np.array, previous_value: np.array
+        current_value: np.array,
+        previous_value: np.array,
 ) -> np.array:
     """
     TODO: what should the rate of change be when the previous value is a zero?

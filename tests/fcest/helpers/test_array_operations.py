@@ -14,6 +14,9 @@ class TestArrayOperations(unittest.TestCase):
     """
 
     def test_assert_positive_definite_not_symmetric(self):
+        """
+        Test that the function returns False when the input is not symmetric.
+        """
         matrices = [
             [
                 [1.0, 0.1],
@@ -28,6 +31,9 @@ class TestArrayOperations(unittest.TestCase):
         self.assertFalse(are_all_positive_definite(matrices))
 
     def test_assert_positive_definite_symmetric_not_positive_definite(self):
+        """
+        Test that the function returns False when the input is symmetric but not positive definite.
+        """
         matrices = [
             [
                 [1.0, 2.1],
@@ -42,6 +48,9 @@ class TestArrayOperations(unittest.TestCase):
         self.assertFalse(are_all_positive_definite(matrices))
 
     def test_assert_positive_definite_symmetric_positive_definite(self):
+        """
+        Test that the function returns True when the input is symmetric and positive definite.
+        """
         matrices = [
             [
                 [1.0, 0.1],
@@ -56,7 +65,9 @@ class TestArrayOperations(unittest.TestCase):
         self.assertTrue(are_all_positive_definite(matrices))
 
     def test_to_correlation_structure(self):
-        # test identical covariance and correlation structures
+        """
+        Test identical covariance and correlation structures.
+        """
         test_covariance_structure = self._get_test_covariance_structure()
         test_correlation_structure = to_correlation_structure(test_covariance_structure)
         assert_array_almost_equal(test_correlation_structure, test_covariance_structure)

@@ -11,6 +11,13 @@ __all__ = [
 def to_2d_format(three_dimensional_cov_matrices_array: np.array) -> np.array:
     """
     Convert estimates to 2D array to save it to disk.
+
+    Parameters
+    ----------
+    :param three_dimensional_cov_matrices_array:
+        Array of shape (N, D, D).
+    :return:
+        Array of shape (D*D, N).
     """
     return three_dimensional_cov_matrices_array.reshape(
         len(three_dimensional_cov_matrices_array), -1
@@ -40,6 +47,12 @@ def to_3d_format(r_formatted_array: np.array) -> np.array:
 def test_for_normality(data_array: np.array) -> None:
     """
     Test for normality - a precondition for running t-tests.
+
+    Parameters
+    ----------
+    :param data_array:
+        Array of shape (N, D).
+    :return:
     """
     k2, cohort_normality_pvalues = scipy.stats.normaltest(
         data_array, axis=0, nan_policy='omit'

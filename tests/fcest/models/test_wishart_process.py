@@ -16,6 +16,9 @@ logging.basicConfig(
 
 
 class TestWishartProcess(unittest.TestCase):
+    """
+    Test the WishartProcess class.
+    """
 
     def test_sparse_variational_wishart_process(
         self,
