@@ -20,8 +20,11 @@ class TestLikelihoods(unittest.TestCase):
     """
 
     def test_tensor_computations(
-            self, num_mc_samples: int = 2, num_time_steps: int = 6, 
-            num_time_series: int = 2, nu: int = 3
+            self,
+            num_mc_samples: int = 2,
+            num_time_steps: int = 6,
+            num_time_series: int = 2,
+            nu: int = 3,
     ) -> None:
         """
         Test tensor computations.
@@ -73,7 +76,9 @@ class TestLikelihoods(unittest.TestCase):
         assert_array_almost_equal(yaffay_1, yaffay_2)
 
     def test_wishart_process_likelihood(self):
-
+        """
+        Test Wishart process likelihood initialization.
+        """
         wishart_process_likelihood = WishartProcessLikelihood(
             D=2,
             nu=2,

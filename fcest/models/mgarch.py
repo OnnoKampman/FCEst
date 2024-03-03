@@ -65,8 +65,12 @@ class MGARCH:
                 raise NotImplementedError(f"MGARCH model type '{mgarch_type:s}' not recognized.")
 
     def _define_r_code_model_dcc(
-            self, uspec_mean_model: str, uspec_variance_model: str, dccspec_order: str,
-            spec_distribution: str = "mvt", fit_control: str = "FALSE"
+            self,
+            uspec_mean_model: str,
+            uspec_variance_model: str,
+            dccspec_order: str,
+            spec_distribution: str = "mvt",
+            fit_control: str = "FALSE",
     ) -> None:
         """
         Note that the double curly brackets are necessary for Python's f-strings.
@@ -120,10 +124,16 @@ class MGARCH:
         self.mgarch = ro.r(r_dcc_garch_code)
 
     def _define_r_code_model_go(
-            self, gogarchspec_mean_model: str = "c(1, 1)"
+            self,
+            gogarchspec_mean_model: str = "c(1, 1)",
     ) -> None:
         """
         Note that the double curly brackets are necessary for Python's f-strings.
+
+        Parameters
+        ----------
+        :param gogarchspec_mean_model:
+            Default is c(1, 1).
         """
         r_go_garch_code = f"""
             library('rmgarch')
@@ -155,42 +165,50 @@ class MGARCH:
         return self.train_location_covariance_structure
 
     def fit_model(
-            self, training_data_df: pd.DataFrame, training_type: str = 'joint'
+            self,
+            training_data_y: np.array,
+            training_type: str = 'joint',
     ) -> None:
         """
         Note that these MGARCH implementations require at least 100 time points to train.
 
         Parameters
         ----------
-        :param training_data_df:
-            Expected of shape (N, D).
+        :param training_data_y:
+            Expected to be of shape (N, D).
         :param training_type:
             'joint' or 'bivariate_loop'.
         """
-        if len(training_data_df) < 100:
+        if len(training_data_y) < 100:
             logging.error("Data length too short to train MGARCH models on.")
             exit()
         match training_type:
             case 'joint' | 'multivariate':
-                fit, self.train_location_covariance_structure = self._fit_model_joint(training_data_df)
+                fit, self.train_location_covariance_structure = self._fit_model_joint(training_data_y)
                 self.fit = fit
             case 'bivariate_loop' | 'pairwise':
-                self.train_location_covariance_structure = self._fit_model_bivariate_loop(training_data_df)
+                self.train_location_covariance_structure = self._fit_model_bivariate_loop(training_data_y)
             case _:
                 raise NotImplementedError(f"Training type '{training_type:s}' not recognized.")
 
-    def _fit_model_joint(self, training_data_df: pd.DataFrame):
+    def _fit_model_joint(
+            self,
+            training_data_y: np.array,
+    ):
         """
         Fit the MGARCH model to the training data jointly.
 
         Parameters
         ----------
-        :param training_data_df:
+        :param training_data_y:
+            Expected to be of shape (N, D).
         :return:
             fit: object with fit results overview and parameters
             train_location_covariance_structure: array of shape (N, D, D)
         """
-        r_training_data_df = self._convert_to_r_df(training_data_df)  # R format DataFrame
+        r_training_data_df = self._convert_to_r_df(
+            pd.DataFrame(training_data_y)
+        )  # R format DataFrame
         fit, train_location_covariance_structure = self.mgarch(r_training_data_df)  # <class 'rpy2.robjects.methods.RS4'>, <class 'rpy2.robjects.vectors.FloatArray'>
         train_location_covariance_structure = np.array(train_location_covariance_structure)  # (D, D, N)
         train_location_covariance_structure = np.transpose(
@@ -198,18 +216,21 @@ class MGARCH:
         )  # (N, D, D)
         return fit, train_location_covariance_structure
 
-    def _fit_model_bivariate_loop(self, training_data_df: pd.DataFrame) -> np.array:
+    def _fit_model_bivariate_loop(
+            self,
+            training_data_y: np.array,
+    ) -> np.array:
         """
         Here we loop over all edges in pairwise fashion.
 
         Parameters
         ----------
-        :param training_data_df:
-            Expected of shape (N, D).
+        :param training_data_y:
+            Expected to be of shape (N, D).
         :return:
         """
-        num_time_steps = training_data_df.shape[0]
-        num_time_series = training_data_df.shape[1]
+        num_time_steps = training_data_y.shape[0]
+        num_time_series = training_data_y.shape[1]
 
         # Break DataFrame up into bivariate pairs (i.e. edgewise).
         interaction_pairs = np.triu_indices(num_time_series, k=1)
@@ -219,7 +240,10 @@ class MGARCH:
         train_location_covariance_structure = np.zeros((num_time_steps, num_time_series, num_time_series))
         for i_interaction_pair, (ts_i, ts_j) in enumerate(interaction_pairs):
             print(f"Edge {i_interaction_pair+1:d}/{len(interaction_pairs):d}.")
-            bivariate_pair_df = training_data_df.iloc[:, [ts_i, ts_j]]
+
+            bivariate_pair_df = pd.DataFrame(training_data_y).iloc[:, [ts_i, ts_j]]
+            # bivariate_pair_df = training_data_y[:, [ts_i, ts_j]]
+            
             _, cov_struc = self._fit_model_joint(bivariate_pair_df)  # (N, 2, 2)
 
             # Add covariance term to full covariance structure.
@@ -233,8 +257,10 @@ class MGARCH:
         return train_location_covariance_structure
 
     def save_tvfc_estimates(
-            self, savedir: str, model_name: str,
-            connectivity_metric: str = 'correlation'
+            self,
+            savedir: str,
+            model_name: str,
+            connectivity_metric: str = 'correlation',
     ) -> None:
         """
         Save TVFC estimates.
@@ -263,13 +289,30 @@ class MGARCH:
     def load_model_estimates(savedir: str, model_name: str) -> np.array:
         """
         Load model TVFC estimates.
+
+        Parameters
+        ----------
+        :param savedir:
+        :param model_name:
+        :return:
         """
         train_loc_cov_structure = pd.read_csv(os.path.join(savedir, model_name))  # (D*D, N)
         train_loc_cov_structure = to_3d_format(train_loc_cov_structure)  # (N, D, D)
         return train_loc_cov_structure
 
     @staticmethod
-    def _convert_to_r_df(python_df: pd.DataFrame):
+    def _convert_to_r_df(
+        python_df: pd.DataFrame
+    ):
+        """
+        Convert a pandas DataFrame to an R DataFrame.
+
+        Parameters
+        ----------
+        :param python_df:
+            A pandas DataFrame.
+        :return:
+        """
         with localconverter(ro.default_converter + pandas2ri.converter):
             r_from_python_df = ro.conversion.py2rpy(python_df)
         return r_from_python_df

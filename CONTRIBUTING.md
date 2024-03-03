@@ -1,8 +1,8 @@
 # Contributing to FCEst
 
-This file contains notes for potential contributors to FCEst, as well as some notes that may be helpful for maintenance.
-
 This file is still a work in progress.
+
+This file contains notes for potential contributors to FCEst, as well as some notes that may be helpful for maintenance.
 
 #### Table Of Contents
 
@@ -10,10 +10,6 @@ This file is still a work in progress.
 * [Code quality requirements](#code-quality-requirements)
 * [Pull requests and the master branch](#pull-requests-and-the-master-branch)
 * [Tests and continuous integration](#tests-and-continuous-integration)
-* [Documentation](#documentation)
-* [Version numbering](#version-numbering)
-    * [Keeping up with TensorFlow](#keeping-up-with-tensorflow)
-
 
 ## Project scope
 
@@ -30,7 +26,8 @@ If the feature is outside the envisaged scope, we can still link to a separate p
 
 - Code must be covered by tests. This is still a work in progress. We strongly encourage you to use the [pytest](https://docs.pytest.org/) framework.
 - The code must be documented. We use *reST* in docstrings. *reST* is a [standard way of documenting](http://docs.python-guide.org/en/latest/writing/documentation/) in python.\
-If the code which you are working on does not yet have any documentation, we would be very grateful if you could amend the deficiency. Missing documentation leads to ambiguities and difficulties in understanding future contributions and use cases.
+If the code which you are working on does not yet have any documentation, we would be very grateful if you could amend the deficiency.
+Missing documentation leads to ambiguities and difficulties in understanding future contributions and use cases.
 - Use [type annotations](https://docs.python.org/3/library/typing.html). Type hints make code cleaner and _safer_ to some extent.
 - Python code should generally follow the *PEP8* style.
 - Practise writing good code as far as is reasonable. Simpler is usually better. Reading the existing FCEst code should give a good idea of the expected style.
@@ -41,7 +38,8 @@ Variable names: scalars and vectors start lowercase, but following the notation 
 
 ### Formatting
 
-FCEst uses [black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) for formatting. Simply run `make format` from the FCEst root directory (or check our Makefile for the appropriate command-line options).
+FCEst uses [black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) for formatting.
+Simply run `make format` from the FCEst root directory (or check our Makefile for the appropriate command-line options).
 
 ## Pull requests
 
@@ -69,4 +67,5 @@ FCEst does not have a documentation yet.
 
 The main purpose of versioning FCEst is user convenience.
 
-We use the [semantic versioning scheme](https://semver.org/). The semver implies `MAJOR.MINOR.PATCH` version scheme, where `MAJOR` changes when there are incompatibilities in API, `MINOR` means adding functionality without breaking existing API and `PATCH` presumes the code update has backward compatible bug fixes.
+We use the [semantic versioning scheme](https://semver.org/).
+The semver implies `MAJOR.MINOR.PATCH` version scheme, where `MAJOR` changes when there are incompatibilities in API, `MINOR` means adding functionality without breaking existing API and `PATCH` presumes the code update has backward compatible bug fixes.

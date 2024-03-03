@@ -19,6 +19,9 @@ class TestSlidingWindows(unittest.TestCase):
     """
 
     def test_static_covariance_estimate_bivariate(self):
+        """
+        Test the static covariance estimate for a bivariate time series.
+        """
         y_test = np.array([
             [0, 2],
             [1, 1],
@@ -41,6 +44,9 @@ class TestSlidingWindows(unittest.TestCase):
         assert_array_equal(cov_estimates, true_cov)
 
     def test_static_correlation_estimate_bivariate(self):
+        """
+        Test the static correlation estimate for a bivariate time series.
+        """
         y_test = np.array([
             [0, 2],
             [1, 1],
@@ -63,6 +69,9 @@ class TestSlidingWindows(unittest.TestCase):
         assert_array_equal(corr_estimates, true_corr)
 
     def test_static_covariance_estimate_trivariate(self):
+        """
+        Test the static covariance estimate for a trivariate time series.
+        """
         y_test = np.array([
             [0, 2, 2],
             [1, 1, 1],

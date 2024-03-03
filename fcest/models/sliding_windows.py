@@ -28,7 +28,6 @@ class SlidingWindows:
     """
     Main class for sliding-windows methods for time-varying functional connectivity (TVFC) estimation.
 
-    TODO: implement tapered sliding-windows (TSW)
     TODO: implement partial correlation estimation on top of 'simple' estimation
     """
 
@@ -52,6 +51,7 @@ class SlidingWindows:
             If no repetition time is fed, then we assume we are running on synthetic data.
         :param window_shape:
             'rectangle', 'tapered' (Gaussian)
+            TODO: implement tapered sliding-windows (TSW)
         """
         self.x_train = x_train_locations
         self.y_train = y_train_locations
@@ -72,7 +72,9 @@ class SlidingWindows:
             logging.error("Other window types not implemented yet.")
 
     def estimate_static_functional_connectivity(
-            self, connectivity_metric: str, return_structure: bool = True
+            self,
+            connectivity_metric: str,
+            return_structure: bool = True,
     ) -> np.array:
         """
         Static functional connectivity (sFC) structure estimate.
@@ -105,8 +107,11 @@ class SlidingWindows:
         return sfc_estimate
 
     def overlapping_windowed_cov_estimation(
-            self, window_length: int,
-            step_size: int = 1, repetition_time: float = None, connectivity_metric: str = 'covariance'
+            self,
+            window_length: int,
+            step_size: int = 1,
+            repetition_time: float = None,
+            connectivity_metric: str = 'covariance',
     ) -> np.array:
         """
         Overlapping sliding-windows estimate.
@@ -169,7 +174,9 @@ class SlidingWindows:
         return estimated_tvfc
 
     def compute_cross_validated_optimal_window_length(
-            self, window_length_step_size: int = 2, eval_location_step_size: int = 1
+            self,
+            window_length_step_size: int = 2,
+            eval_location_step_size: int = 1,
     ) -> int:
         """
         This is currently run for a single subject.
@@ -190,7 +197,9 @@ class SlidingWindows:
         return optimal_window_length
 
     def find_cross_validated_optimal_window_length(
-            self, window_length_step_size: int = 2, eval_location_step_size: int = 1
+            self,
+            window_length_step_size: int = 2,
+            eval_location_step_size: int = 1,
     ) -> pd.DataFrame:
         """
         This is currently run for a single subject.
@@ -265,8 +274,9 @@ class SlidingWindows:
         return results_df
 
     def _set_min_max_proposed_window_length(
-            self, min_proposal_window_length_seconds: float = 20.0, 
-            max_proposal_window_length_seconds: float = 180.0
+            self,
+            min_proposal_window_length_seconds: float = 20.0,
+            max_proposal_window_length_seconds: float = 180.0,
     ) -> None:
         """
         Leonardi2015 states that window lengths of 20 seconds would need filtering out of frequencies below 0.05 Hz,
@@ -362,8 +372,11 @@ class SlidingWindows:
         return cov_structure
 
     def save_tvfc_estimates(
-            self, optimal_window_length: int, savedir: str, model_name: str,
-            repetition_time: float = None, connectivity_metric: str = 'correlation'
+            self,
+            optimal_window_length: int,
+            savedir: str, model_name: str,
+            repetition_time: float = None,
+            connectivity_metric: str = 'correlation',
     ) -> None:
         """
         Saves TVFC estimates.
@@ -394,7 +407,8 @@ class SlidingWindows:
 
     @staticmethod
     def load_tvfc_estimates(
-            savedir: str, model_name: str
+            savedir: str,
+            model_name: str,
     ) -> np.array:
         """
         Loads SW-CV model estimates.

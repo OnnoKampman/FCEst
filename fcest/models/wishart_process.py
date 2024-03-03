@@ -118,7 +118,9 @@ class VariationalWishartProcess(models.vgp.VGP):
         )
 
     def predict_cov(
-            self, x_new: np.array, num_mc_samples: int = 300
+            self,
+            x_new: np.array,
+            num_mc_samples: int = 300,
     ) -> (tf.Tensor, tf.Tensor):
         """
         The main attribute to predict covariance matrices at any point in time.
@@ -139,7 +141,9 @@ class VariationalWishartProcess(models.vgp.VGP):
         return cov_mean, cov_stddev
 
     def predict_corr(
-            self, x_new: np.array, num_mc_samples: int = 300
+            self,
+            x_new: np.array,
+            num_mc_samples: int = 300,
     ) -> (tf.Tensor, tf.Tensor):
         """
         The main attribute to predict correlation matrices at any point in time.
@@ -163,7 +167,9 @@ class VariationalWishartProcess(models.vgp.VGP):
         return corr_mean, corr_stddev
 
     def _get_cov_samples(
-            self, x_new: np.array, num_mc_samples: int = 300
+            self,
+            x_new: np.array,
+            num_mc_samples: int = 300,
     ) -> tf.Tensor:
         """
         Prediction routine for covariance matrices.
@@ -206,7 +212,9 @@ class VariationalWishartProcess(models.vgp.VGP):
         return affa
 
     def _initialize_parameters(
-            self, kernel_lengthscale_init: float, q_sqrt_init: float
+            self,
+            kernel_lengthscale_init: float,
+            q_sqrt_init: float,
     ) -> None:
         """
         Model parameter initialization is crucial.
@@ -229,12 +237,16 @@ class VariationalWishartProcess(models.vgp.VGP):
         self.q_sqrt.assign(self.q_sqrt * q_sqrt_init)
 
     def save_model_params_dict(
-            self, savedir: str, model_name: str
+            self,
+            savedir: str,
+            model_name: str,
     ) -> None:
         """
         We only save the trained model parameters.
         At loading time, we re-instantiate the model and assign the saved model parameters.
         This currently only works for our Matern52 kernel!
+
+        GPflow has a built-in save method, but we prefer to save model parameters only.
 
         Parameters
         ----------
@@ -259,7 +271,9 @@ class VariationalWishartProcess(models.vgp.VGP):
         logging.info(f"Model '{model_name:s}' saved in '{savedir:s}'.")
 
     def load_from_params_dict(
-            self, savedir: str, model_name: str
+            self,
+            savedir: str,
+            model_name: str,
     ) -> None:
         """
         This assumes you have created a new model.
@@ -401,7 +415,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         return cov_mean, cov_stddev
 
     def predict_cov_samples(
-            self, x_new: np.array, num_mc_samples: int = 300
+            self,
+            x_new: np.array,
+            num_mc_samples: int = 300,
     ) -> tf.Tensor:
         """
         TODO: we don't use this
@@ -444,7 +460,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         return corr_mean, corr_stddev
 
     def _get_cov_samples(
-            self, x_new: np.array, num_mc_samples: int = 300
+            self,
+            x_new: np.array,
+            num_mc_samples: int = 300,
     ) -> tf.Tensor:
         """
         Prediction routine for covariance matrices.
@@ -489,7 +507,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         return self.likelihood.A_scale_matrix * self.likelihood.A_scale_matrix.T
 
     def _initialize_parameters(
-            self, kernel_lengthscale_init: float, q_sqrt_init: float
+            self,
+            kernel_lengthscale_init: float,
+            q_sqrt_init: float,
     ) -> None:
         """
         Set initial values of trainable parameters.
@@ -504,7 +524,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         self.q_sqrt.assign(self.q_sqrt * q_sqrt_init)
 
     def save_model_params_dict(
-            self, savedir: str, model_name: str
+            self,
+            savedir: str,
+            model_name: str,
     ) -> None:
         """
         We only save the trained model parameters.
@@ -536,7 +558,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         logging.info(f"Model '{model_name:s}' saved in '{savedir:s}'.")
 
     def load_from_params_dict(
-            self, savedir: str, model_name: str
+            self,
+            savedir: str,
+            model_name: str,
     ) -> None:
         """
         This assumes you have created a new model.
