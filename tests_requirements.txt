@@ -11,4 +11,5 @@ rpy2==3.4.5
 scikit-learn
 scipy
 statsmodels
-tensorflow>=2.10
+tensorflow>=2.10,<=2.15
+tf-keras
