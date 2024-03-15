@@ -1,6 +1,7 @@
 .DS_Store
 
-notebooks/
+notebooks/computational_cost/
+notebooks/studies/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
