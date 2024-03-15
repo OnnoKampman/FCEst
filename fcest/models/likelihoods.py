@@ -26,30 +26,69 @@ logging.basicConfig(
 )
 
 
-class WishartProcessLikelihood(MonteCarloLikelihood):
+class WishartProcessLikelihoodBase(MonteCarloLikelihood):
+    """
+    Class for Wishart process likelihoods.
+    """
+
+    def __init__(
+        self,
+        D: int,
+        nu: int = None,
+        num_mc_samples: int = 2,
+        num_factors: int = None,
+    ):
+        """
+        Initialize the base Wishart process likelihood.
+
+        Parameters
+        ----------
+        :param D:
+            The number of time series.
+        :param nu:
+            Degrees of freedom.
+        :param num_mc_samples:
+            Number of Monte Carlo samples used to approximate gradients (S).
+        """
+        if num_factors is not None:
+            latent_dim = num_factors * nu
+        else:
+            latent_dim = D * nu
+        super().__init__(
+            input_dim=1,
+            latent_dim=latent_dim,
+            observation_dim=D,
+        )
+        self.D = D
+        self.nu = nu
+        self.num_mc_samples = num_mc_samples
+        self.num_factors = num_factors
+
+
+class WishartProcessLikelihood(WishartProcessLikelihoodBase):
     """
     Class for Wishart process likelihoods.
     It specifies an observation model connecting the latent functions ('F') to the data ('Y').
     """
 
     def __init__(
-            self,
-            D: int,
-            nu: int = None,
-            num_mc_samples: int = 2,
-            A_scale_matrix_option: str = 'train_full_matrix',
-            train_additive_noise: bool = False,
-            additive_noise_matrix_init: float = 0.01,
-            verbose: bool = True,
+        self,
+        D: int,
+        nu: int = None,
+        num_mc_samples: int = 2,
+        A_scale_matrix_option: str = 'train_full_matrix',
+        train_additive_noise: bool = False,
+        additive_noise_matrix_init: float = 0.01,
+        verbose: bool = True,
     ) -> None:
         """
         Initialize the Wishart process likelihood.
 
         Parameters
         ----------
-        :param D: 
+        :param D:
             The number of time series.
-        :param nu: 
+        :param nu:
             Degrees of freedom.
         :param num_mc_samples:
             Number of Monte Carlo samples used to approximate gradients (S).
@@ -66,13 +105,10 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         if nu < D:
             raise Exception("Wishart Degrees of Freedom must be >= D.")
         super().__init__(
-            input_dim=1,
-            latent_dim=D * nu,
-            observation_dim=D,
+            D=D,
+            nu=nu,
+            num_mc_samples=num_mc_samples,
         )
-        self.D = D
-        self.nu = nu
-        self.num_mc_samples = num_mc_samples
         self.A_scale_matrix = self._set_A_scale_matrix(option=A_scale_matrix_option)  # (D, D)
 
         # The additive noise matrix must have positive diagonal values, which this softplus construction guarantees.
@@ -91,11 +127,11 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
             print('initial additive part: ', self.additive_part)
 
     def variational_expectations(
-            self,
-            x_data: np.array,
-            f_mean: tf.Tensor,
-            f_variance: tf.Tensor,
-            y_data: np.array,
+        self,
+        x_data: np.array,
+        f_mean: tf.Tensor,
+        f_variance: tf.Tensor,
+        y_data: np.array,
     ) -> tf.Tensor:
         """
         This returns the expectation of log likelihood part of the ELBO.
@@ -205,7 +241,10 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         log_likel_p = tf.math.reduce_mean(log_likel_p, axis=0)  # mean over Monte Carlo samples, (N, )
         return log_likel_p
 
-    def _set_A_scale_matrix(self, option: str = 'identity') -> tf.Tensor:
+    def _set_A_scale_matrix(
+        self,
+        option: str = 'identity',
+    ) -> tf.Tensor:
         """
         A (the Cholesky factor of scale matrix V) represents the mean of estimates.
 
@@ -250,7 +289,10 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
             raise NotImplementedError(f"Option '{option:s}' for 'A_scale_matrix' not recognized.")
         return A_scale_matrix
 
-    def _add_diagonal_additive_noise(self, cov_matrix):
+    def _add_diagonal_additive_noise(
+        self,
+        cov_matrix,
+    ):
         """
         Add some noise, either fixed or trained.
 
@@ -264,7 +306,27 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         )
 
 
-class FactoredWishartProcessLikelihood(MonteCarloLikelihood):
+class FactoredWishartProcessLikelihood(WishartProcessLikelihoodBase):
+    """
+    Class for Factored Wishart process likelihoods.
+    """
 
-    def __init__(self):
+    def __init__(
+        self,
+        D: int,
+        nu: int = None,
+        num_mc_samples: int = 2,
+        num_factors: int = None,
+        A_scale_matrix_option: str = 'train_full_matrix',
+        train_additive_noise: bool = False,
+        additive_noise_matrix_init: float = 0.01,
+        verbose: bool = True,
+    ):
+        nu = num_factors if nu is None else nu
+        super().__init__(
+            D=D,
+            nu=nu,
+            num_mc_samples=num_mc_samples,
+        )
+
         raise NotImplementedError("Factorized Wishart process not implemented yet.")
