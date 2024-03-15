@@ -28,7 +28,7 @@ logging.basicConfig(
 
 class WishartProcessLikelihoodBase(MonteCarloLikelihood):
     """
-    Class for Wishart process likelihoods.
+    Abstract class for all Wishart process likelihoods.
     """
 
     def __init__(
@@ -40,6 +40,7 @@ class WishartProcessLikelihoodBase(MonteCarloLikelihood):
     ):
         """
         Initialize the base Wishart process likelihood.
+        This implementation assumes the input is uni-dimensional.
 
         Parameters
         ----------
@@ -49,6 +50,7 @@ class WishartProcessLikelihoodBase(MonteCarloLikelihood):
             Degrees of freedom.
         :param num_mc_samples:
             Number of Monte Carlo samples used to approximate gradients (S).
+            Sometimes also denoted as R.
         """
         if num_factors is not None:
             latent_dim = num_factors * nu
@@ -76,7 +78,7 @@ class WishartProcessLikelihood(WishartProcessLikelihoodBase):
         D: int,
         nu: int = None,
         num_mc_samples: int = 2,
-        A_scale_matrix_option: str = 'train_full_matrix',
+        scale_matrix_cholesky_option: str = 'train_full_matrix',
         train_additive_noise: bool = False,
         additive_noise_matrix_init: float = 0.01,
         verbose: bool = True,
@@ -92,7 +94,7 @@ class WishartProcessLikelihood(WishartProcessLikelihoodBase):
             Degrees of freedom.
         :param num_mc_samples:
             Number of Monte Carlo samples used to approximate gradients (S).
-        :param A_scale_matrix_option:
+        :param scale_matrix_cholesky_option:
         :param train_additive_noise:
             Whether to train the additive noise matrix (Lambda).
         :param additive_noise_matrix_init:
@@ -109,7 +111,9 @@ class WishartProcessLikelihood(WishartProcessLikelihoodBase):
             nu=nu,
             num_mc_samples=num_mc_samples,
         )
-        self.A_scale_matrix = self._set_A_scale_matrix(option=A_scale_matrix_option)  # (D, D)
+        self.A_scale_matrix = self._set_A_scale_matrix(
+            option=scale_matrix_cholesky_option
+        )  # (D, D)
 
         # The additive noise matrix must have positive diagonal values, which this softplus construction guarantees.
         additive_noise_matrix_init = np.log(
@@ -122,7 +126,7 @@ class WishartProcessLikelihood(WishartProcessLikelihoodBase):
         )  # (D, )
 
         if verbose:
-            logging.info(f"A scale matrix option is '{A_scale_matrix_option:s}'.")
+            logging.info(f"Scale matrix Cholesky (matrix A) option is '{scale_matrix_cholesky_option:s}'.")
             print('A_scale_matrix: ', self.A_scale_matrix)
             print('initial additive part: ', self.additive_part)
 
@@ -207,13 +211,14 @@ class WishartProcessLikelihood(WishartProcessLikelihoodBase):
         # compute the constant term of the log likelihood
         constant_term = - self.D / 2 * tf.math.log(2 * tf.constant(np.pi, dtype=tf.float64))
 
-        # compute the `log(det(AFFA))` component of the log likelihood
+        # compute the AFFA component of the log likelihood - our construction of \Sigma
         # TODO: this does not work for nu != D
         # af = tf.matmul(self.A_scale_matrix, f_sample)  # (S, N, D, nu)
         af = tf.multiply(self.A_scale_matrix, f_sample)
-
-        affa = tf.matmul(af, af, transpose_b=True)  # (S, N, D, D) - our construction of \Sigma
+        affa = tf.matmul(af, af, transpose_b=True)  # (S, N, D, D)
         affa = self._add_diagonal_additive_noise(affa)  # (S, N, D, D)
+
+        # compute the `log(det(AFFA))` component of the log likelihood
         # Before, the trainable additive noise sometimes broke the Cholesky decomposition.
         # This did not happen again after forcing it to be positive.
         # TODO: Can adding positive values to the diagonal ever make a PSD matrix become non-PSD?
@@ -224,7 +229,9 @@ class WishartProcessLikelihood(WishartProcessLikelihoodBase):
             print(self.additive_part)
             print(e)
         log_det_affa = 2 * tf.math.reduce_sum(
-            tf.math.log(tf.linalg.diag_part(L)),
+            tf.math.log(
+                tf.linalg.diag_part(L)
+            ),
             axis=2
         )  # (S, N)
 
@@ -317,7 +324,7 @@ class FactoredWishartProcessLikelihood(WishartProcessLikelihoodBase):
         nu: int = None,
         num_mc_samples: int = 2,
         num_factors: int = None,
-        A_scale_matrix_option: str = 'train_full_matrix',
+        scale_matrix_cholesky_option: str = 'train_full_matrix',
         train_additive_noise: bool = False,
         additive_noise_matrix_init: float = 0.01,
         verbose: bool = True,
@@ -330,3 +337,30 @@ class FactoredWishartProcessLikelihood(WishartProcessLikelihoodBase):
         )
 
         raise NotImplementedError("Factorized Wishart process not implemented yet.")
+
+    def _log_prob(
+        self,
+        x_data: np.array,
+        f_sample: tf.Tensor,
+        y_data: np.array,
+    ) -> tf.Tensor:
+        """
+        Compute the (Monte Carlo estimate of) the log likelihood given samples of the GPs.
+
+        This overrides the method in MonteCarloLikelihood.
+
+        Parameters
+        ----------
+        :param x_data:
+            Input tensor.
+            NumPy array of shape (num_time_steps, 1) or (N, 1).
+        :param f_sample:
+            Function evaluation tensor.
+            (num_mc_samples, num_time_steps, num_factors, degrees_of_freedom) or (S, N, K, nu) -
+        :param y_data:
+            Observation tensor.
+            (num_time_steps, num_time_series) or (N, D) -
+        :return:
+            (num_time_steps, ) or (N, )
+        """
+        assert isinstance(f_sample, tf.Tensor)

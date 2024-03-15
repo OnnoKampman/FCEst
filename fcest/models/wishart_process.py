@@ -53,7 +53,7 @@ class VariationalWishartProcess(models.vgp.VGP):
         nu: int = None,
         kernel: Kernel = None,
         num_mc_samples: int = 5,
-        A_scale_matrix_option: str = 'train_full_matrix',
+        scale_matrix_cholesky_option: str = 'train_full_matrix',
         train_additive_noise: bool = True,
         kernel_lengthscale_init: float = 0.3,
         q_sqrt_init: float = 0.001,
@@ -78,7 +78,7 @@ class VariationalWishartProcess(models.vgp.VGP):
         :param num_mc_samples:
             The number of Monte Carlo samples used to approximate the ELBO.
             In the paper this is R, in the code sometimes S.
-        :param A_scale_matrix_option:
+        :param scale_matrix_cholesky_option:
             We found that training the full matrix yields the best results.
         :param train_additive_noise:
         :param kernel_lengthscale_init:
@@ -105,7 +105,7 @@ class VariationalWishartProcess(models.vgp.VGP):
                 D=self.D,
                 nu=nu,
                 num_mc_samples=num_mc_samples,
-                A_scale_matrix_option=A_scale_matrix_option,
+                scale_matrix_cholesky_option=scale_matrix_cholesky_option,
                 train_additive_noise=train_additive_noise,
                 num_factors=num_factors,
             )
@@ -114,7 +114,7 @@ class VariationalWishartProcess(models.vgp.VGP):
                 D=self.D,
                 nu=nu,
                 num_mc_samples=num_mc_samples,
-                A_scale_matrix_option=A_scale_matrix_option,
+                scale_matrix_cholesky_option=scale_matrix_cholesky_option,
                 train_additive_noise=train_additive_noise,
             )
         super().__init__(
@@ -338,7 +338,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         nu: int = None,
         kernel: Kernel = gpflow.kernels.Matern52(),
         num_mc_samples: int = 5,
-        A_scale_matrix_option: str = 'train_full_matrix',
+        scale_matrix_cholesky_option: str = 'train_full_matrix',
         train_additive_noise: bool = True,
         kernel_lengthscale_init: float = 0.3,
         q_sqrt_init: float = 0.001,
@@ -362,7 +362,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         :param kernel:
         :param num_mc_samples:
             Number of Monte Carlo samples taken to approximate the ELBO.
-        :param A_scale_matrix_option:
+        :param scale_matrix_cholesky_option:
         :param train_additive_noise:
         :param kernel_lengthscale_init:
         :param q_sqrt_init:
@@ -387,7 +387,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
                 D=self.D,
                 nu=nu,
                 num_mc_samples=num_mc_samples,
-                A_scale_matrix_option=A_scale_matrix_option,
+                scale_matrix_cholesky_option=scale_matrix_cholesky_option,
                 train_additive_noise=train_additive_noise,
                 num_factors=num_factors,
                 verbose=verbose,
@@ -397,7 +397,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
                 D=self.D,
                 nu=nu,
                 num_mc_samples=num_mc_samples,
-                A_scale_matrix_option=A_scale_matrix_option,
+                scale_matrix_cholesky_option=scale_matrix_cholesky_option,
                 train_additive_noise=train_additive_noise,
                 verbose=verbose,
             )

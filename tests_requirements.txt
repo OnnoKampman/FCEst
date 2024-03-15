@@ -12,3 +12,4 @@ scikit-learn
 scipy
 statsmodels
 tensorflow>=2.10
+tf-keras
