@@ -12,4 +12,5 @@ scikit-learn
 scipy
 statsmodels
 tensorflow>=2.10,<=2.15
+tensorflow-probability<=0.23
 tf-keras
