@@ -20,11 +20,11 @@ class TestLikelihoods(unittest.TestCase):
     """
 
     def test_tensor_computations(
-            self,
-            num_mc_samples: int = 2,
-            num_time_steps: int = 6,
-            num_time_series: int = 2,
-            nu: int = 3,
+        self,
+        num_mc_samples: int = 2,
+        num_time_steps: int = 6,
+        num_time_series: int = 2,
+        nu: int = 3,
     ) -> None:
         """
         Test tensor computations.
@@ -83,7 +83,7 @@ class TestLikelihoods(unittest.TestCase):
             D=2,
             nu=2,
             num_mc_samples=7,
-            A_scale_matrix_option='train_full_matrix',
+            scale_matrix_cholesky_option='train_full_matrix',
             train_additive_noise=True
         )
 

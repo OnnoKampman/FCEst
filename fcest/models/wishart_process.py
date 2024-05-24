@@ -37,7 +37,6 @@ class VariationalWishartProcess(models.vgp.VGP):
     Base class of the variational Wishart process (VWP) model.
     Most of the work will be done by `gpflow.models.vgp.VGP`.
 
-    TODO: add option for minibatch training
     TODO: shall we convert all to float32 instead of float64 to speed up computation?
         from gpflow.config import default_float
         from gpflow.utilities import to_default_float
@@ -48,17 +47,18 @@ class VariationalWishartProcess(models.vgp.VGP):
     """
 
     def __init__(
-            self,
-            x_observed: np.array,
-            y_observed: np.array,
-            nu: int = None,
-            kernel: Kernel = None,
-            num_mc_samples: int = 5,
-            A_scale_matrix_option: str = 'train_full_matrix',
-            train_additive_noise: bool = True,
-            kernel_lengthscale_init: float = 0.3,
-            q_sqrt_init: float = 0.001,
-            num_factors: int = None,
+        self,
+        x_observed: np.array,
+        y_observed: np.array,
+        nu: int = None,
+        kernel: Kernel = None,
+        num_mc_samples: int = 5,
+        scale_matrix_cholesky_option: str = 'train_full_matrix',
+        train_additive_noise: bool = True,
+        kernel_lengthscale_init: float = 0.3,
+        q_sqrt_init: float = 0.001,
+        num_factors: int = None,
+        minibatch_size: int = None,
     ) -> None:
         """
         Initialize Variational Wishart Process (VWP) model.
@@ -78,19 +78,20 @@ class VariationalWishartProcess(models.vgp.VGP):
         :param num_mc_samples:
             The number of Monte Carlo samples used to approximate the ELBO.
             In the paper this is R, in the code sometimes S.
-        :param A_scale_matrix_option:
+        :param scale_matrix_cholesky_option:
             We found that training the full matrix yields the best results.
         :param train_additive_noise:
         :param kernel_lengthscale_init:
         :param q_sqrt_init:
             Empirical results suggest a value of 0.001 is slightly better than 0.01.
         :param num_factors:
+            Number of factors to use in the factored model.
+            If None, the non-factored model will be instantiated.
+        :param minibatch_size:
+            TODO: add option for minibatch training
         """
         self.D = y_observed.shape[1]
         logging.info(f"Found {self.D:d} time series (D = {self.D:d}).")
-
-        if num_factors is not None:
-            raise NotImplementedError("Factorized Wishart process not implemented yet.")
 
         if nu is None:
             nu = self.D
@@ -99,13 +100,23 @@ class VariationalWishartProcess(models.vgp.VGP):
         if kernel is None:
             kernel = gpflow.kernels.Matern52()
 
-        likel = WishartProcessLikelihood(
-            D=self.D,
-            nu=nu,
-            num_mc_samples=num_mc_samples,
-            A_scale_matrix_option=A_scale_matrix_option,
-            train_additive_noise=train_additive_noise,
-        )
+        if num_factors is not None:
+            likel = FactoredWishartProcessLikelihood(
+                D=self.D,
+                nu=nu,
+                num_mc_samples=num_mc_samples,
+                scale_matrix_cholesky_option=scale_matrix_cholesky_option,
+                train_additive_noise=train_additive_noise,
+                num_factors=num_factors,
+            )
+        else:
+            likel = WishartProcessLikelihood(
+                D=self.D,
+                nu=nu,
+                num_mc_samples=num_mc_samples,
+                scale_matrix_cholesky_option=scale_matrix_cholesky_option,
+                train_additive_noise=train_additive_noise,
+            )
         super().__init__(
             data=(x_observed, y_observed),
             kernel=kernel,
@@ -118,10 +129,10 @@ class VariationalWishartProcess(models.vgp.VGP):
         )
 
     def predict_cov(
-            self,
-            x_new: np.array,
-            num_mc_samples: int = 300,
-    ) -> (tf.Tensor, tf.Tensor):
+        self,
+        x_new: np.array,
+        num_mc_samples: int = 300,
+    ) -> tuple[tf.Tensor, tf.Tensor]:
         """
         The main attribute to predict covariance matrices at any point in time.
 
@@ -141,10 +152,10 @@ class VariationalWishartProcess(models.vgp.VGP):
         return cov_mean, cov_stddev
 
     def predict_corr(
-            self,
-            x_new: np.array,
-            num_mc_samples: int = 300,
-    ) -> (tf.Tensor, tf.Tensor):
+        self,
+        x_new: np.array,
+        num_mc_samples: int = 300,
+    ) -> tuple[tf.Tensor, tf.Tensor]:
         """
         The main attribute to predict correlation matrices at any point in time.
 
@@ -312,6 +323,8 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
     """
     Base class of the sparse variational Wishart process (SVWP) model.
     Most of the work will be done by `gpflow.models.svgp.SVGP`.
+    This is essentially a wrapper around the SVGP model class in GPflow.
+
     This sparse implementation reduces computational cost if we have large N, but is not likely to improve performance.
     However, the location of the inducing points Z may be interesting by themselves.
 
@@ -319,18 +332,19 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
     """
 
     def __init__(
-            self,
-            D: int,
-            Z: np.array,
-            nu: int = None,
-            kernel: Kernel = gpflow.kernels.Matern52(),
-            num_mc_samples: int = 5,
-            A_scale_matrix_option: str = 'train_full_matrix',
-            train_additive_noise: bool = True,
-            kernel_lengthscale_init: float = 0.3,
-            q_sqrt_init: float = 0.001,
-            num_factors: int = None,
-            verbose: bool = True,
+        self,
+        D: int,
+        Z: np.array,
+        nu: int = None,
+        kernel: Kernel = gpflow.kernels.Matern52(),
+        num_mc_samples: int = 5,
+        scale_matrix_cholesky_option: str = 'train_full_matrix',
+        train_additive_noise: bool = True,
+        kernel_lengthscale_init: float = 0.3,
+        q_sqrt_init: float = 0.001,
+        num_factors: int = None,
+        minibatch_size: int = None,
+        verbose: bool = True,
     ) -> None:
         """
         Initialize Sparse Variational Wishart Process (SVWP) model.
@@ -348,13 +362,15 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         :param kernel:
         :param num_mc_samples:
             Number of Monte Carlo samples taken to approximate the ELBO.
-        :param A_scale_matrix_option:
+        :param scale_matrix_cholesky_option:
         :param train_additive_noise:
         :param kernel_lengthscale_init:
         :param q_sqrt_init:
         :param num_factors:
             Number of factors to use in the factored model.
             If None, the non-factored model will be instantiated.
+        :param minibatch_size:
+            TODO: add option for minibatch training
         :param verbose:
         """
         self.D = D
@@ -367,13 +383,21 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         self.nu = nu
 
         if num_factors is not None:
-            likel = FactoredWishartProcessLikelihood()
+            likel = FactoredWishartProcessLikelihood(
+                D=self.D,
+                nu=nu,
+                num_mc_samples=num_mc_samples,
+                scale_matrix_cholesky_option=scale_matrix_cholesky_option,
+                train_additive_noise=train_additive_noise,
+                num_factors=num_factors,
+                verbose=verbose,
+            )
         else:
             likel = WishartProcessLikelihood(
                 D=self.D,
                 nu=nu,
                 num_mc_samples=num_mc_samples,
-                A_scale_matrix_option=A_scale_matrix_option,
+                scale_matrix_cholesky_option=scale_matrix_cholesky_option,
                 train_additive_noise=train_additive_noise,
                 verbose=verbose,
             )
@@ -390,10 +414,10 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         )
 
     def predict_cov(
-            self,
-            x_new: np.array,
-            num_mc_samples: int = 300,
-    ) -> (tf.Tensor, tf.Tensor):
+        self,
+        x_new: np.array,
+        num_mc_samples: int = 300,
+    ) -> tuple[tf.Tensor, tf.Tensor]:
         """
         The main attribute to predict covariance matrices at any point in time.
 
@@ -415,29 +439,29 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         return cov_mean, cov_stddev
 
     def predict_cov_samples(
-            self,
-            x_new: np.array,
-            num_mc_samples: int = 300,
+        self,
+        x_new: np.array,
+        num_mc_samples: int = 300,
     ) -> tf.Tensor:
         """
-        TODO: we don't use this
-
         The main attribute to predict covariance matrices at any point in time.
 
         Parameters
         ----------
         :param x_new:
+            The locations at which to predict.
         :param num_mc_samples:
+            Number of Monte Carlo samples.
         :return:
         """
         cov_samples = self._get_cov_samples(x_new, num_mc_samples)  # (S_new, N_new, D, D)
         return cov_samples
 
     def predict_corr(
-            self,
-            x_new: np.array,
-            num_mc_samples: int = 300,
-    ) -> (tf.Tensor, tf.Tensor):
+        self,
+        x_new: np.array,
+        num_mc_samples: int = 300,
+    ) -> tuple[tf.Tensor, tf.Tensor]:
         """
         The main attribute to predict correlation matrices at any point in time.
 
@@ -446,7 +470,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         Parameters
         ----------
         :param x_new:
+            Locations at which to predict.
         :param num_mc_samples:
+            Number of Monte Carlo samples.
         :return:
             Tuple of (mean, stddev) of correlation matrices.
         """
@@ -460,9 +486,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         return corr_mean, corr_stddev
 
     def _get_cov_samples(
-            self,
-            x_new: np.array,
-            num_mc_samples: int = 300,
+        self,
+        x_new: np.array,
+        num_mc_samples: int = 300,
     ) -> tf.Tensor:
         """
         Prediction routine for covariance matrices.
@@ -494,7 +520,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
             dtype=tf.dtypes.float64
         ) * f_stddev_new + f_mean_new  # (S_new, N_new, D, nu)
 
-        # TODO: does this still work if nu != D?
+        if self.nu != self.D:
+            # TODO: does this still work if nu != D?
+            raise NotImplementedError("This implementation only works for nu = D.")
         # print(self.likelihood.A_scale_matrix)
         # af = tf.matmul(self.likelihood.A_scale_matrix, f_sample)  # (S_new, N_new, D, nu)
         af = tf.multiply(self.likelihood.A_scale_matrix, f_sample)  # (S_new, N_new, D, nu)
@@ -507,9 +535,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         return self.likelihood.A_scale_matrix * self.likelihood.A_scale_matrix.T
 
     def _initialize_parameters(
-            self,
-            kernel_lengthscale_init: float,
-            q_sqrt_init: float,
+        self,
+        kernel_lengthscale_init: float,
+        q_sqrt_init: float,
     ) -> None:
         """
         Set initial values of trainable parameters.
@@ -524,9 +552,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         self.q_sqrt.assign(self.q_sqrt * q_sqrt_init)
 
     def save_model_params_dict(
-            self,
-            savedir: str,
-            model_name: str,
+        self,
+        savedir: str,
+        model_name: str,
     ) -> None:
         """
         We only save the trained model parameters.
@@ -558,9 +586,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         logging.info(f"Model '{model_name:s}' saved in '{savedir:s}'.")
 
     def load_from_params_dict(
-            self,
-            savedir: str,
-            model_name: str,
+        self,
+        savedir: str,
+        model_name: str,
     ) -> None:
         """
         This assumes you have created a new model.
