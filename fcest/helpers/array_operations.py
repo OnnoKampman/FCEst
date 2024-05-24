@@ -180,3 +180,45 @@ def _is_positive_definite(matrix: np.array) -> bool:
         return True
     except la.LinAlgError:
         return False
+
+
+def reconstruct_symmetric_matrix_from_tril(
+    cluster_array: np.array,
+    num_time_series: int,
+    diagonal: str = 'ones',
+) -> np.array:
+    """
+    Reconstruct full matrix from lower triangular values.
+
+    Parameters
+    ----------
+    :param cluster_array:
+    :param num_time_series:
+    :param diagonal:
+    :return:
+        Array of shape (D, D).
+    """
+    match diagonal:
+        case 'ones':
+            reconstructed_corr_matrix = np.ones(shape=(num_time_series, num_time_series))  # (D, D)
+        case 'zeros':
+            reconstructed_corr_matrix = np.zeros(shape=(num_time_series, num_time_series))  # (D, D)
+        case _:
+            reconstructed_corr_matrix = np.ones(shape=(num_time_series, num_time_series))  # (D, D)
+
+    mask = np.tri(num_time_series, dtype=bool, k=-1)  # matrix of bools
+
+    # Add lower triangular values.
+    reconstructed_corr_matrix[mask] = cluster_array
+
+    # Add upper triangular values (transpose matrix first and then re-add lower triangular values).
+    reconstructed_corr_matrix = reconstructed_corr_matrix.T
+    reconstructed_corr_matrix[mask] = cluster_array
+
+    assert _check_symmetric(reconstructed_corr_matrix)
+
+    return reconstructed_corr_matrix
+
+
+def _check_symmetric(a: np.array, rtol=1e-05, atol=1e-08) -> bool:
+    return np.allclose(a, a.T, rtol=rtol, atol=atol)
