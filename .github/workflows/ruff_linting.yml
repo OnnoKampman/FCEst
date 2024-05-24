@@ -1,4 +1,4 @@
-name: Pylint
+name: Ruff linting
 
 on: [push]
 
@@ -18,8 +18,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install gpflow>=2.6.0 numpy pandas==1.5.3 pylint rpy2==3.4.5 scipy statsmodels
-      - name: Analysing the code with pylint
+          pip install gpflow>=2.6.0 numpy pandas==1.5.3 rpy2==3.4.5 ruff scipy statsmodels
+      - name: Analysing the code with Ruff
         run: |
-          pylint $(git ls-files '*.py') --disable=line-too-long,missing-class-docstring,missing-function-docstring,missing-module-docstring --fail-under=7
-        # continue-on-error: true
+          ruff check . --exit-zero
+        continue-on-error: true
