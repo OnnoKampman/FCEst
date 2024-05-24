@@ -18,6 +18,10 @@ $ cd FCEst
 $ pip install -e .
 ```
 
+```zsh
+$ pip install git+https://github.com/OnnoKampman/FCEst.git@v0.1.0
+```
+
 Make sure you have R installed and that `R_HOME` is set, for example by running `brew install r` on MacOS.
 
 At some point this package will be made directly available from PyPi.

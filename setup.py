@@ -30,7 +30,9 @@ setup(
         'rpy2==3.4.5',
         'scipy',
         'statsmodels',
-        'tensorflow>=2.10',
+        'tensorflow>=2.10,<=2.15',
+        'tensorflow-probability<=0.23',
+        'tf-keras',
     ],
     python_requires='>=3.10',
     zip_safe=False
