@@ -26,34 +26,75 @@ logging.basicConfig(
 )
 
 
-class WishartProcessLikelihood(MonteCarloLikelihood):
+class WishartProcessLikelihoodBase(MonteCarloLikelihood):
+    """
+    Abstract class for all Wishart process likelihoods.
+    """
+
+    def __init__(
+        self,
+        D: int,
+        nu: int = None,
+        num_mc_samples: int = 2,
+        num_factors: int = None,
+    ):
+        """
+        Initialize the base Wishart process likelihood.
+        This implementation assumes the input is uni-dimensional.
+
+        Parameters
+        ----------
+        :param D:
+            The number of time series.
+        :param nu:
+            Degrees of freedom.
+        :param num_mc_samples:
+            Number of Monte Carlo samples used to approximate gradients (S).
+            Sometimes also denoted as R.
+        """
+        if num_factors is not None:
+            latent_dim = num_factors * nu
+        else:
+            latent_dim = D * nu
+        super().__init__(
+            input_dim=1,
+            latent_dim=latent_dim,
+            observation_dim=D,
+        )
+        self.D = D
+        self.nu = nu
+        self.num_mc_samples = num_mc_samples
+        self.num_factors = num_factors
+
+
+class WishartProcessLikelihood(WishartProcessLikelihoodBase):
     """
     Class for Wishart process likelihoods.
     It specifies an observation model connecting the latent functions ('F') to the data ('Y').
     """
 
     def __init__(
-            self,
-            D: int,
-            nu: int = None,
-            num_mc_samples: int = 2,
-            A_scale_matrix_option: str = 'train_full_matrix',
-            train_additive_noise: bool = False,
-            additive_noise_matrix_init: float = 0.01,
-            verbose: bool = True,
+        self,
+        D: int,
+        nu: int = None,
+        num_mc_samples: int = 2,
+        scale_matrix_cholesky_option: str = 'train_full_matrix',
+        train_additive_noise: bool = False,
+        additive_noise_matrix_init: float = 0.01,
+        verbose: bool = True,
     ) -> None:
         """
         Initialize the Wishart process likelihood.
 
         Parameters
         ----------
-        :param D: 
+        :param D:
             The number of time series.
-        :param nu: 
+        :param nu:
             Degrees of freedom.
         :param num_mc_samples:
             Number of Monte Carlo samples used to approximate gradients (S).
-        :param A_scale_matrix_option:
+        :param scale_matrix_cholesky_option:
         :param train_additive_noise:
             Whether to train the additive noise matrix (Lambda).
         :param additive_noise_matrix_init:
@@ -66,14 +107,13 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         if nu < D:
             raise Exception("Wishart Degrees of Freedom must be >= D.")
         super().__init__(
-            input_dim=1,
-            latent_dim=D * nu,
-            observation_dim=D,
+            D=D,
+            nu=nu,
+            num_mc_samples=num_mc_samples,
         )
-        self.D = D
-        self.nu = nu
-        self.num_mc_samples = num_mc_samples
-        self.A_scale_matrix = self._set_A_scale_matrix(option=A_scale_matrix_option)  # (D, D)
+        self.A_scale_matrix = self._set_A_scale_matrix(
+            option=scale_matrix_cholesky_option
+        )  # (D, D)
 
         # The additive noise matrix must have positive diagonal values, which this softplus construction guarantees.
         additive_noise_matrix_init = np.log(
@@ -86,16 +126,16 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         )  # (D, )
 
         if verbose:
-            logging.info(f"A scale matrix option is '{A_scale_matrix_option:s}'.")
+            logging.info(f"Scale matrix Cholesky (matrix A) option is '{scale_matrix_cholesky_option:s}'.")
             print('A_scale_matrix: ', self.A_scale_matrix)
             print('initial additive part: ', self.additive_part)
 
     def variational_expectations(
-            self,
-            x_data: np.array,
-            f_mean: tf.Tensor,
-            f_variance: tf.Tensor,
-            y_data: np.array,
+        self,
+        x_data: np.array,
+        f_mean: tf.Tensor,
+        f_variance: tf.Tensor,
+        y_data: np.array,
     ) -> tf.Tensor:
         """
         This returns the expectation of log likelihood part of the ELBO.
@@ -171,13 +211,14 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         # compute the constant term of the log likelihood
         constant_term = - self.D / 2 * tf.math.log(2 * tf.constant(np.pi, dtype=tf.float64))
 
-        # compute the `log(det(AFFA))` component of the log likelihood
+        # compute the AFFA component of the log likelihood - our construction of \Sigma
         # TODO: this does not work for nu != D
         # af = tf.matmul(self.A_scale_matrix, f_sample)  # (S, N, D, nu)
         af = tf.multiply(self.A_scale_matrix, f_sample)
-
-        affa = tf.matmul(af, af, transpose_b=True)  # (S, N, D, D) - our construction of \Sigma
+        affa = tf.matmul(af, af, transpose_b=True)  # (S, N, D, D)
         affa = self._add_diagonal_additive_noise(affa)  # (S, N, D, D)
+
+        # compute the `log(det(AFFA))` component of the log likelihood
         # Before, the trainable additive noise sometimes broke the Cholesky decomposition.
         # This did not happen again after forcing it to be positive.
         # TODO: Can adding positive values to the diagonal ever make a PSD matrix become non-PSD?
@@ -188,7 +229,9 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
             print(self.additive_part)
             print(e)
         log_det_affa = 2 * tf.math.reduce_sum(
-            tf.math.log(tf.linalg.diag_part(L)),
+            tf.math.log(
+                tf.linalg.diag_part(L)
+            ),
             axis=2
         )  # (S, N)
 
@@ -205,7 +248,10 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         log_likel_p = tf.math.reduce_mean(log_likel_p, axis=0)  # mean over Monte Carlo samples, (N, )
         return log_likel_p
 
-    def _set_A_scale_matrix(self, option: str = 'identity') -> tf.Tensor:
+    def _set_A_scale_matrix(
+        self,
+        option: str = 'identity',
+    ) -> tf.Tensor:
         """
         A (the Cholesky factor of scale matrix V) represents the mean of estimates.
 
@@ -250,7 +296,10 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
             raise NotImplementedError(f"Option '{option:s}' for 'A_scale_matrix' not recognized.")
         return A_scale_matrix
 
-    def _add_diagonal_additive_noise(self, cov_matrix):
+    def _add_diagonal_additive_noise(
+        self,
+        cov_matrix,
+    ):
         """
         Add some noise, either fixed or trained.
 
@@ -264,7 +313,54 @@ class WishartProcessLikelihood(MonteCarloLikelihood):
         )
 
 
-class FactoredWishartProcessLikelihood(MonteCarloLikelihood):
+class FactoredWishartProcessLikelihood(WishartProcessLikelihoodBase):
+    """
+    Class for Factored Wishart process likelihoods.
+    """
 
-    def __init__(self):
+    def __init__(
+        self,
+        D: int,
+        nu: int = None,
+        num_mc_samples: int = 2,
+        num_factors: int = None,
+        scale_matrix_cholesky_option: str = 'train_full_matrix',
+        train_additive_noise: bool = False,
+        additive_noise_matrix_init: float = 0.01,
+        verbose: bool = True,
+    ):
+        nu = num_factors if nu is None else nu
+        super().__init__(
+            D=D,
+            nu=nu,
+            num_mc_samples=num_mc_samples,
+        )
+
         raise NotImplementedError("Factorized Wishart process not implemented yet.")
+
+    def _log_prob(
+        self,
+        x_data: np.array,
+        f_sample: tf.Tensor,
+        y_data: np.array,
+    ) -> tf.Tensor:
+        """
+        Compute the (Monte Carlo estimate of) the log likelihood given samples of the GPs.
+
+        This overrides the method in MonteCarloLikelihood.
+
+        Parameters
+        ----------
+        :param x_data:
+            Input tensor.
+            NumPy array of shape (num_time_steps, 1) or (N, 1).
+        :param f_sample:
+            Function evaluation tensor.
+            (num_mc_samples, num_time_steps, num_factors, degrees_of_freedom) or (S, N, K, nu) -
+        :param y_data:
+            Observation tensor.
+            (num_time_steps, num_time_series) or (N, D) -
+        :return:
+            (num_time_steps, ) or (N, )
+        """
+        assert isinstance(f_sample, tf.Tensor)

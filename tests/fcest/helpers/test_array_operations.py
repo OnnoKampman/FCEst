@@ -5,6 +5,7 @@ from numpy.testing import assert_array_almost_equal
 import tensorflow as tf
 
 from fcest.helpers.array_operations import are_all_positive_definite
+from fcest.helpers.array_operations import get_all_lower_triangular_indices_tuples
 from fcest.helpers.array_operations import to_correlation_structure
 
 
@@ -63,6 +64,14 @@ class TestArrayOperations(unittest.TestCase):
         ]
         matrices = tf.constant(matrices, dtype=tf.dtypes.float64)
         self.assertTrue(are_all_positive_definite(matrices))
+
+    def test_get_all_lower_triangular_indices_tuples(self):
+        lower_triangular_indices = get_all_lower_triangular_indices_tuples(
+            num_time_series=3
+        )
+        true_tuples_list = [(1, 0), (2, 0), (2, 1)]
+        self.assertEqual(type(lower_triangular_indices), list)
+        self.assertEqual(lower_triangular_indices, true_tuples_list)
 
     def test_to_correlation_structure(self):
         """
