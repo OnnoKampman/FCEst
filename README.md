@@ -1,6 +1,6 @@
 # FCEst
 
-[![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Coverage](https://img.shields.io/badge/coverage-50%25-brightgreen)](coverage.xml)
 
 `FCEst` is a package for estimating static and time-varying functional connectivity (TVFC) in Python.
