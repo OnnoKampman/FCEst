@@ -32,7 +32,7 @@ setup(
         'rpy2==3.4.5',
         'scipy',
         'statsmodels',
-        'tensorflow==2.15',
+        'tensorflow==2.15',  # upgrading past 2.15 with python 3.12 causes issues with keras
         'tensorflow-probability==0.23',
         'tf-keras',
     ],
