@@ -24,16 +24,18 @@ setup(
     url='https://github.com/OnnoKampman/FCEst',
     packages=packages,
     install_requires=[
-        'gpflow>=2.6.0',
+        'gpflow==2.10.0',
+        'ipykernel',  # for running Jupyter Notebooks
+        'matplotlib',  # for plotting test results
         'numpy',
         'pandas==1.5.3',
         'rpy2==3.4.5',
         'scipy',
         'statsmodels',
-        'tensorflow>=2.10,<=2.15',
+        'tensorflow>=2.10,<=2.20',
         'tensorflow-probability<=0.23',
         'tf-keras',
     ],
-    python_requires='>=3.10',
+    python_requires='>=3.11',
     zip_safe=False
 )
