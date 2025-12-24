@@ -11,7 +11,13 @@ def read_file(filename: str) -> str:
         return f.read().strip()
 
 
-packages = find_packages(".", exclude=["tests"])
+packages = find_packages(
+    ".",
+    exclude=[
+        "notebooks",
+        "tests",
+    ]
+)
 version = read_file("VERSION")
 
 setup(
@@ -33,9 +39,9 @@ setup(
         'scipy',
         'statsmodels',
         'tensorflow==2.15',  # upgrading past 2.15 with python 3.12 causes issues with keras
-        'tensorflow-probability==0.23',
+        'tensorflow-probability==0.23.*',
         'tf-keras',
     ],
-    python_requires='>=3.11',
+    python_requires='>=3.11,<3.12',
     zip_safe=False
 )

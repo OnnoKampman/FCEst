@@ -115,6 +115,23 @@ Additional model demonstrations can be found in Jupyter Notebooks under `.notebo
 FCEst is an open-source project and contributions from the community are more than welcome.
 Please raise an issue on Github or send me a message.
 
+## Citing FCEst
+
+If you used any of the code or inspiration from this repository, please consider citing our [Imaging Neuroscience article](https://direct.mit.edu/imag/article/doi/10.1162/imag_a_00184/121101/Time-varying-functional-connectivity-as-Wishart).
+Sample Bibtex is given below:
+```
+@ARTICLE{Kampman2024,
+  author = {Kampman, Onno P. and Ziminski, Joe and Afyouni, Soroosh and {van der Wilk}, Mark and Kourtzi, Zoe},
+    title = "{Time-varying functional connectivity as Wishart processes}",
+  journal = {Imaging Neuroscience},
+  year    = {2024},
+  volume  = {2},
+  number  = {2},
+  pages   = {1-45},
+  url     = {https://direct.mit.edu/imag/article/doi/10.1162/imag_a_00184/121101/Time-varying-functional-connectivity-as-Wishart}
+}
+```
+
 ## Curated list of relevant papers
 
 A curated list of publications related to functional connectivity estimation can be found on [Semantic Scholar](https://www.semanticscholar.org/shared/library/folder/8091430).
