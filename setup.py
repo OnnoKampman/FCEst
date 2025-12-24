@@ -27,13 +27,13 @@ setup(
         'gpflow==2.10.0',
         'ipykernel',  # for running Jupyter Notebooks
         'matplotlib',  # for plotting test results
-        'numpy',
+        'numpy<2',
         'pandas==1.5.3',
         'rpy2==3.4.5',
         'scipy',
         'statsmodels',
-        'tensorflow>=2.10,<=2.20',
-        'tensorflow-probability<=0.23',
+        'tensorflow==2.15',
+        'tensorflow-probability==0.23',
         'tf-keras',
     ],
     python_requires='>=3.11',

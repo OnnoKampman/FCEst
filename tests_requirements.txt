@@ -1,6 +1,6 @@
 gpflow==2.10.0
 # mpfr  # for installing R package 'rmgarch' on Ubuntu
-numpy
+numpy<2
 pandas==1.5.3
 pylint
 pytest
@@ -11,6 +11,6 @@ rpy2==3.4.5
 scikit-learn
 scipy
 statsmodels
-tensorflow>=2.10,<=2.20
-tensorflow-probability<=0.23
+tensorflow==2.15
+tensorflow-probability==0.23
 tf-keras
