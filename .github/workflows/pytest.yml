@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
     #   - name: Switch to Current Branch
         # run: git checkout ${{ env.BRANCH }}
@@ -33,3 +33,9 @@ jobs:
       - name: Run unit tests
         run: |
           python -m pytest --cov=./fcest --cov-report=term --cov-report=xml --import-mode=append ./tests
+          echo "$(python -m pytest --cov=./fcest --cov-report=xml | grep -oP '(?<=<report\s+.*\s+line-rate=")\d+(\.\d+)?')"
+          # echo "$(pytest --cov=./fcest --cov-report=xml | grep -oP '(?<=<report\s+.*\s+line-rate=")\d+(\.\d+)?')" > coverage_percentage.txt
+
+      # - name: Set Coverage Percentage
+      #   id: set_coverage
+      #   run: echo "::set-output name=coverage::$(pytest --cov=./fcest --cov-report=xml | grep -oP '(?<=<report\s+.*\s+line-rate=")\d+(\.\d+)?')"
