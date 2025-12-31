@@ -10,7 +10,10 @@ __all__ = ["GraphMetricsExtractor"]
 
 class GraphMetricsExtractor:
 
-    def __init__(self, graph: nx.Graph) -> None:
+    def __init__(
+        self,
+        graph: nx.Graph,
+    ) -> None:
         self.graph = graph
 
     def extract(self) -> dict[str, float | int]:

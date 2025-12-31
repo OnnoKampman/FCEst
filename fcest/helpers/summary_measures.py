@@ -1,6 +1,5 @@
-from typing import TYPE_CHECKING
-
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt

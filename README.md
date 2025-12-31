@@ -1,7 +1,7 @@
-# FCEst
+# FCEst: Python library for estimation of functional connectivity
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Coverage](https://img.shields.io/badge/coverage-50%25-brightgreen)](coverage.xml)
+[![Coverage](https://img.shields.io/badge/coverage-46%25-brightgreen)](coverage.xml)
 
 `FCEst` is a package for estimating static and time-varying functional connectivity (TVFC) in Python.
 It includes a range of methods for this task, including Wishart processes, DCC and GO MGARCH models, and sliding windows.
@@ -19,7 +19,7 @@ $ pip install -e .
 ```
 
 ```zsh
-$ pip install git+https://github.com/OnnoKampman/FCEst.git@v0.1.0
+$ pip install git+https://github.com/OnnoKampman/FCEst.git@v0.1.1
 ```
 
 Make sure you have R installed and that `R_HOME` is set, for example by running `brew install r` on MacOS.

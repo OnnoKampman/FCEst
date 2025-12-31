@@ -29,6 +29,7 @@ class BrainStatesExtractor:
         Parameters
         ----------
         connectivity_metric : str, default='correlation'
+        num_time_series : int
         tvfc_estimates : np.array
             Array of shape (num_subjects, num_time_steps, num_features).
         """
