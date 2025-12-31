@@ -132,6 +132,10 @@ Sample Bibtex is given below:
 }
 ```
 
+## References
+
+* [Multiverse analysis of functional connectivity estimation](https://github.com/mibur1/dfc-multiverse)
+
 ## Curated list of relevant papers
 
 A curated list of publications related to functional connectivity estimation can be found on [Semantic Scholar](https://www.semanticscholar.org/shared/library/folder/8091430).
