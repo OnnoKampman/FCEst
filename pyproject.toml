@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fcest"
+version = "0.1.1"
+description = "Methods for estimation of functional connectivity"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Onno P. Kampman", email = "onno.kampman@gmail.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "gpflow==2.10.0",
+    "ipykernel",
+    "matplotlib",
+    "numpy<2",
+    "pandas==1.5.3",
+    "rpy2==3.4.5",
+    "scipy",
+    "statsmodels",
+    "tensorflow==2.15",
+    "tensorflow-probability==0.23.*",
+    "tf-keras",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pylint",
+    "ruff",
+]
+
+[project.urls]
+Homepage = "https://github.com/OnnoKampman/FCEst"
+Repository = "https://github.com/OnnoKampman/FCEst"
+Issues = "https://github.com/OnnoKampman/FCEst/issues"
+
+[tool.setuptools]
+packages = ["fcest"]
+
+[tool.setuptools.package-data]
+"*" = ["*.txt", "*.md"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false

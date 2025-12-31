@@ -1,6 +1,6 @@
 name: Pytest
 
-# Run only on pushes to main branch and to pull requests into main branch.
+# Run Pytest only on pushes to main branch and to pull requests into main branch.
 on:
   push:
     branches: [ main ]
