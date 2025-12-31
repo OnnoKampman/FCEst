@@ -1,5 +1,11 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
+import numpy.typing as npt
 from scipy.signal import butter, filtfilt
+
+if TYPE_CHECKING:
+    pass
 
 __all__ = [
     "highpass_filter_data", 
@@ -10,10 +16,10 @@ __all__ = [
 
 
 def highpass_filter_data(
-        y_observed: np.array,
-        window_length: int,
-        repetition_time: float,
-) -> np.array:
+    y_observed: npt.NDArray[np.float64],
+    window_length: int,
+    repetition_time: float,
+) -> npt.NDArray[np.float64]:
     """
     We want to remove frequencies below 1 / window length (in seconds).
 
@@ -43,7 +49,11 @@ def highpass_filter_data(
     return y_filtered
 
 
-def butter_highpass_filter(data, cutoff_low, nyquist_freq) -> np.array:
+def butter_highpass_filter(
+    data: npt.NDArray[np.float64],
+    cutoff_low: float,
+    nyquist_freq: float,
+) -> npt.NDArray[np.float64]:
     """
     Apply a high-pass filter to the data.
 
@@ -70,7 +80,11 @@ def butter_highpass_filter(data, cutoff_low, nyquist_freq) -> np.array:
     return filtered_data
 
 
-def _butter_highpass(cutoff_low, nyquist_freq, order=5) -> tuple[np.array, np.array]:
+def _butter_highpass(
+    cutoff_low: float,
+    nyquist_freq: float,
+    order: int = 5,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """
     Design a high-pass filter.
 
@@ -94,8 +108,8 @@ def _butter_highpass(cutoff_low, nyquist_freq, order=5) -> tuple[np.array, np.ar
 
 
 def _compute_lower_frequency_cutoff(
-        window_length,
-        repetition_time,
+    window_length: int,
+    repetition_time: float,
 ) -> float:
     """
     Compute the lower frequency cutoff for the high-pass filter.

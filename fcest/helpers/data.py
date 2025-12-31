@@ -1,5 +1,11 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
+import numpy.typing as npt
 import scipy.stats
+
+if TYPE_CHECKING:
+    pass
 
 __all__ = [
     "to_2d_format",
@@ -8,7 +14,9 @@ __all__ = [
 ]
 
 
-def to_2d_format(three_dimensional_cov_matrices_array: np.array) -> np.array:
+def to_2d_format(
+    three_dimensional_cov_matrices_array: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
     """
     Convert estimates to 2D array to save it to disk.
 
@@ -24,7 +32,9 @@ def to_2d_format(three_dimensional_cov_matrices_array: np.array) -> np.array:
     ).T  # (D*D, N)
 
 
-def to_3d_format(r_formatted_array: np.array) -> np.array:
+def to_3d_format(
+    r_formatted_array: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
     """
     We cannot store a 3D object in a `.csv` file, so it is stored as a 2D matrix.
     This function reshapes it to a 3D object.
@@ -44,7 +54,7 @@ def to_3d_format(r_formatted_array: np.array) -> np.array:
     return three_dimensional_cov_matrices_array
 
 
-def test_for_normality(data_array: np.array) -> None:
+def test_for_normality(data_array: npt.NDArray[np.float64]) -> None:
     """
     Test for normality - a precondition for running t-tests.
 
