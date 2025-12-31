@@ -1,6 +1,6 @@
 gpflow==2.10.0
 # mpfr  # for installing R package 'rmgarch' on Ubuntu
-numpy<2
+numpy
 pandas==1.5.3
 pylint
 pytest
