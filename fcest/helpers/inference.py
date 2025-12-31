@@ -1,6 +1,5 @@
-from typing import TYPE_CHECKING, Any
-
 import logging
+from typing import TYPE_CHECKING, Any
 
 import gpflow
 from gpflow.monitor import (
@@ -10,11 +9,12 @@ from gpflow.monitor import (
     MonitorTaskGroup,
     ScalarToTensorBoard,
 )
+import numpy as np
 import numpy.typing as npt
 import tensorflow as tf
 
 if TYPE_CHECKING:
-    import numpy as np
+    pass
 
 __all__ = ["run_adam"]
 
