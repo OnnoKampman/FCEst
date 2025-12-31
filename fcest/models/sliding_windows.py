@@ -13,15 +13,22 @@
 # limitations under the License.
 
 import logging
-import os
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from scipy.stats import multivariate_normal
 
 from ..helpers.array_operations import to_correlation_structure
 from ..helpers.data import to_3d_format
 from ..helpers.filtering import highpass_filter_data
+
+if TYPE_CHECKING:
+    pass
+
+__all__ = ["SlidingWindows"]
 
 
 class SlidingWindows:
@@ -32,11 +39,11 @@ class SlidingWindows:
     """
 
     def __init__(
-            self,
-            x_train_locations: np.array,
-            y_train_locations: np.array,
-            repetition_time: float = None,
-            window_shape: str = 'rectangle',
+        self,
+        x_train_locations: npt.NDArray[np.float64],
+        y_train_locations: npt.NDArray[np.float64],
+        repetition_time: float | None = None,
+        window_shape: str = 'rectangle',
     ) -> None:
         """
         Main sliding-windows functional connectivity class.
@@ -72,10 +79,10 @@ class SlidingWindows:
             logging.error("Other window types not implemented yet.")
 
     def estimate_static_functional_connectivity(
-            self,
-            connectivity_metric: str,
-            return_structure: bool = True,
-    ) -> np.array:
+        self,
+        connectivity_metric: str,
+        return_structure: bool = True,
+    ) -> npt.NDArray[np.float64]:
         """
         Static functional connectivity (sFC) structure estimate.
 
@@ -107,12 +114,12 @@ class SlidingWindows:
         return sfc_estimate
 
     def overlapping_windowed_cov_estimation(
-            self,
-            window_length: int,
-            step_size: int = 1,
-            repetition_time: float = None,
-            connectivity_metric: str = 'covariance',
-    ) -> np.array:
+        self,
+        window_length: int,
+        step_size: int = 1,
+        repetition_time: float | None = None,
+        connectivity_metric: str = 'covariance',
+    ) -> npt.NDArray[np.float64]:
         """
         Overlapping sliding-windows estimate.
         A step size of a single data point is common.
@@ -180,6 +187,8 @@ class SlidingWindows:
     ) -> int:
         """
         This is currently run for a single subject.
+
+        NOTE: An interesting extension to this could be to cross-validate the window length individually for each edge (i.e., covariance matrix entry). That would place it more in line with the pairwise DCC-BL model, which can lean different parameters for each edge.
 
         Parameters
         ----------
@@ -349,7 +358,10 @@ class SlidingWindows:
 
         return optimal_window_length
 
-    def windowed_cov_estimation(self, num_windows: int) -> np.array:
+    def windowed_cov_estimation(
+        self,
+        num_windows: int,
+    ) -> npt.NDArray[np.float64]:
         """
         Segmented, non-overlapping windows.
 
@@ -372,11 +384,12 @@ class SlidingWindows:
         return cov_structure
 
     def save_tvfc_estimates(
-            self,
-            optimal_window_length: int,
-            savedir: str, model_name: str,
-            repetition_time: float = None,
-            connectivity_metric: str = 'correlation',
+        self,
+        optimal_window_length: int,
+        savedir: str,
+        model_name: str,
+        repetition_time: float | None = None,
+        connectivity_metric: str = 'correlation',
     ) -> None:
         """
         Saves TVFC estimates.
@@ -398,18 +411,16 @@ class SlidingWindows:
         cov_structure_df = pd.DataFrame(
             train_loc_cov_structure.reshape(len(train_loc_cov_structure), -1).T
         )  # (D*D, N)
-        if not os.path.exists(savedir):
-            os.makedirs(savedir)
-        cov_structure_df.to_csv(
-            os.path.join(savedir, model_name)
-        )
+        savedir_path = Path(savedir)
+        savedir_path.mkdir(parents=True, exist_ok=True)
+        cov_structure_df.to_csv(savedir_path / model_name)
         logging.info(f"Saved SW-CV model (train location) estimates to '{savedir:s}'.")
 
     @staticmethod
     def load_tvfc_estimates(
-            savedir: str,
-            model_name: str,
-    ) -> np.array:
+        savedir: str,
+        model_name: str,
+    ) -> npt.NDArray[np.float64]:
         """
         Loads SW-CV model estimates.
 
@@ -421,7 +432,7 @@ class SlidingWindows:
             covariance structure array of shape (N, D, D).
         """
         train_loc_cov_structure = pd.read_csv(
-            os.path.join(savedir, model_name)
+            Path(savedir) / model_name
         )  # (D*D, N)
         train_loc_cov_structure = to_3d_format(train_loc_cov_structure)  # (N, D, D)
         return train_loc_cov_structure
