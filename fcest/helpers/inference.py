@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING, Any
 
 import gpflow
 from gpflow.monitor import (
@@ -8,19 +9,26 @@ from gpflow.monitor import (
     MonitorTaskGroup,
     ScalarToTensorBoard,
 )
+import numpy as np
+import numpy.typing as npt
 import tensorflow as tf
+
+if TYPE_CHECKING:
+    pass
+
+__all__ = ["run_adam"]
 
 
 def run_adam(
     model_type: str,
-    model,
+    model: Any,  # GPflow model - using Any since GPflow types are complex
     iterations: int,
     log_interval: int,
-    log_dir: str = None,
-    data: tuple = None,
+    log_dir: str | None = None,
+    data: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
     train_inducing_variables: bool = True,
-    minibatch_size: int = None,
-) -> list:
+    minibatch_size: int | None = None,
+) -> list[float]:
     """
     GPflow utility function for running the Adam optimizer.
     View Tensorboard logs by running `tensorboard --logdir=${log_dir}`.

@@ -1,8 +1,14 @@
+from typing import TYPE_CHECKING
+
 import logging
 
 import numpy as np
+import numpy.typing as npt
 import scipy.linalg as la
 import tensorflow as tf
+
+if TYPE_CHECKING:
+    pass
 
 __all__ = [
     "to_correlation_structure", 
@@ -16,7 +22,9 @@ __all__ = [
 ]
 
 
-def to_correlation_structure(covariance_structure: np.array) -> np.array:
+def to_correlation_structure(
+    covariance_structure: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
     """
     Converts a covariance structure to a correlation structure.
 
@@ -33,7 +41,9 @@ def to_correlation_structure(covariance_structure: np.array) -> np.array:
     return np.array(correlation_structure)
 
 
-def _correlation_from_covariance(covariance_matrix: np.array) -> np.array:
+def _correlation_from_covariance(
+    covariance_matrix: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
     """
     Converts a covariance matrix to a correlation matrix.
 
@@ -103,7 +113,9 @@ def are_all_positive_definite(covariance_matrices: tf.Tensor) -> bool:
     return True
 
 
-def zscore_estimates(tvfc_estimates_array: np.array) -> np.array:
+def zscore_estimates(
+    tvfc_estimates_array: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
     """
     Returns z-scored or standard-scored estimates.
 
@@ -116,7 +128,9 @@ def zscore_estimates(tvfc_estimates_array: np.array) -> np.array:
     return tvfc_estimates_array - np.mean(tvfc_estimates_array) / np.std(tvfc_estimates_array)
 
 
-def get_all_lower_triangular_indices_tuples(num_time_series: int) -> list:
+def get_all_lower_triangular_indices_tuples(
+    num_time_series: int,
+) -> list[tuple[int, int]]:
     """
     Returns a list of tuples, where each tuple contains the indices of one of the lower
     triangular elements of a matrix.
@@ -133,7 +147,9 @@ def get_all_lower_triangular_indices_tuples(num_time_series: int) -> list:
     )
 
 
-def find_nearest_positive_definite(matrix: np.array) -> np.array:
+def find_nearest_positive_definite(
+    matrix: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
     """
     Find the nearest positive definite matrix to the input matrix.
 
@@ -164,7 +180,7 @@ def find_nearest_positive_definite(matrix: np.array) -> np.array:
     return A3
 
 
-def _is_positive_definite(matrix: np.array) -> bool:
+def _is_positive_definite(matrix: npt.NDArray[np.float64]) -> bool:
     """
     Check if a matrix is positive definite.
 
@@ -180,3 +196,49 @@ def _is_positive_definite(matrix: np.array) -> bool:
         return True
     except la.LinAlgError:
         return False
+
+
+def reconstruct_symmetric_matrix_from_tril(
+    cluster_array: npt.NDArray[np.float64],
+    num_time_series: int,
+    diagonal: str = 'ones',
+) -> npt.NDArray[np.float64]:
+    """
+    Reconstruct full matrix from lower triangular values.
+
+    Parameters
+    ----------
+    :param cluster_array:
+    :param num_time_series:
+    :param diagonal:
+    :return:
+        Array of shape (D, D).
+    """
+    match diagonal:
+        case 'ones':
+            reconstructed_corr_matrix = np.ones(shape=(num_time_series, num_time_series))  # (D, D)
+        case 'zeros':
+            reconstructed_corr_matrix = np.zeros(shape=(num_time_series, num_time_series))  # (D, D)
+        case _:
+            reconstructed_corr_matrix = np.ones(shape=(num_time_series, num_time_series))  # (D, D)
+
+    mask = np.tri(num_time_series, dtype=bool, k=-1)  # matrix of bools
+
+    # Add lower triangular values.
+    reconstructed_corr_matrix[mask] = cluster_array
+
+    # Add upper triangular values (transpose matrix first and then re-add lower triangular values).
+    reconstructed_corr_matrix = reconstructed_corr_matrix.T
+    reconstructed_corr_matrix[mask] = cluster_array
+
+    assert _check_symmetric(reconstructed_corr_matrix)
+
+    return reconstructed_corr_matrix
+
+
+def _check_symmetric(
+    a: npt.NDArray[np.float64],
+    rtol: float = 1e-05,
+    atol: float = 1e-08,
+) -> bool:
+    return np.allclose(a, a.T, rtol=rtol, atol=atol)

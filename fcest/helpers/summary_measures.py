@@ -1,9 +1,14 @@
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 from statsmodels.tsa.ar_model import AutoReg
 
 from .array_operations import get_all_lower_triangular_indices_tuples
+
+if TYPE_CHECKING:
+    pass
 
 __all__ = [
     "summarize_tvfc_estimates", 
@@ -14,9 +19,9 @@ __all__ = [
 
 
 def summarize_tvfc_estimates(
-        full_covariance_structure: np.array,
-        tvfc_summary_metric: str,
-) -> np.array:
+    full_covariance_structure: npt.NDArray[np.float64],
+    tvfc_summary_metric: str,
+) -> npt.NDArray[np.float64] | None:
     """
     Summarize a full TVFC covariance structure over temporal axis.
 
@@ -47,7 +52,9 @@ def summarize_tvfc_estimates(
             logging.error(f"TVFC summary metric {tvfc_summary_metric:s} not recognized.")
 
 
-def fit_and_extract_ar1_param(full_covariance_structure: np.array) -> np.array:
+def fit_and_extract_ar1_param(
+    full_covariance_structure: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
     """
     Summarize estimated TVFC by taking AR(1) component of each time series.
     Diagonal terms are set to zero at the moment.
@@ -81,7 +88,9 @@ def fit_and_extract_ar1_param(full_covariance_structure: np.array) -> np.array:
     return ar1_coefficients
 
 
-def compute_rate_of_change(full_covariance_structure: np.array) -> np.array:
+def compute_rate_of_change(
+    full_covariance_structure: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
     """
     Rate of change is a time series summary statistic that measures the intensity of fluctuations in time.
     It is defined here as the average relative step size across time.
@@ -107,9 +116,9 @@ def compute_rate_of_change(full_covariance_structure: np.array) -> np.array:
 
 
 def _rate_of_change(
-        current_value: np.array,
-        previous_value: np.array,
-) -> np.array:
+    current_value: npt.NDArray[np.float64],
+    previous_value: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
     """
     TODO: what should the rate of change be when the previous value is a zero?
 

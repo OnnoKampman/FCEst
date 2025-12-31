@@ -14,16 +14,23 @@
 
 import json
 import logging
-import os
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import gpflow.kernels
 from gpflow.kernels import Kernel
 from gpflow import models
 import numpy as np
+import numpy.typing as npt
 import tensorflow as tf
 
 from ..helpers.array_operations import are_all_positive_definite, convert_tensor_to_correlation
 from .likelihoods import WishartProcessLikelihood, FactoredWishartProcessLikelihood
+
+if TYPE_CHECKING:
+    pass
+
+__all__ = ["VariationalWishartProcess", "SparseVariationalWishartProcess"]
 
 logging.basicConfig(
     format='%(asctime)s : %(levelname)s : %(message)s',
@@ -48,17 +55,17 @@ class VariationalWishartProcess(models.vgp.VGP):
 
     def __init__(
         self,
-        x_observed: np.array,
-        y_observed: np.array,
-        nu: int = None,
-        kernel: Kernel = None,
+        x_observed: npt.NDArray[np.float64],
+        y_observed: npt.NDArray[np.float64],
+        nu: int | None = None,
+        kernel: Kernel | None = None,
         num_mc_samples: int = 5,
         scale_matrix_cholesky_option: str = 'train_full_matrix',
         train_additive_noise: bool = True,
         kernel_lengthscale_init: float = 0.3,
         q_sqrt_init: float = 0.001,
-        num_factors: int = None,
-        minibatch_size: int = None,
+        num_factors: int | None = None,
+        minibatch_size: int | None = None,
     ) -> None:
         """
         Initialize Variational Wishart Process (VWP) model.
@@ -130,7 +137,7 @@ class VariationalWishartProcess(models.vgp.VGP):
 
     def predict_cov(
         self,
-        x_new: np.array,
+        x_new: npt.NDArray[np.float64],
         num_mc_samples: int = 300,
     ) -> tuple[tf.Tensor, tf.Tensor]:
         """
@@ -153,7 +160,7 @@ class VariationalWishartProcess(models.vgp.VGP):
 
     def predict_corr(
         self,
-        x_new: np.array,
+        x_new: npt.NDArray[np.float64],
         num_mc_samples: int = 300,
     ) -> tuple[tf.Tensor, tf.Tensor]:
         """
@@ -178,9 +185,9 @@ class VariationalWishartProcess(models.vgp.VGP):
         return corr_mean, corr_stddev
 
     def _get_cov_samples(
-            self,
-            x_new: np.array,
-            num_mc_samples: int = 300,
+        self,
+        x_new: npt.NDArray[np.float64],
+        num_mc_samples: int = 300,
     ) -> tf.Tensor:
         """
         Prediction routine for covariance matrices.
@@ -275,16 +282,16 @@ class VariationalWishartProcess(models.vgp.VGP):
             'q_mu': self.q_mu.numpy().tolist(),
             'q_sqrt': self.q_sqrt.numpy().tolist()
         }
-        if not os.path.exists(savedir):
-            os.makedirs(savedir)
-        with open(os.path.join(savedir, model_name), 'w') as fp:
+        savedir_path = Path(savedir)
+        savedir_path.mkdir(parents=True, exist_ok=True)
+        with open(savedir_path / model_name, 'w') as fp:
             json.dump(params_dict, fp)
         logging.info(f"Model '{model_name:s}' saved in '{savedir:s}'.")
 
     def load_from_params_dict(
-            self,
-            savedir: str,
-            model_name: str,
+        self,
+        savedir: str,
+        model_name: str,
     ) -> None:
         """
         This assumes you have created a new model.
@@ -295,7 +302,7 @@ class VariationalWishartProcess(models.vgp.VGP):
         :param savedir:
         :param model_name:
         """
-        with open(os.path.join(savedir, model_name), 'r') as fp:
+        with open(Path(savedir) / model_name, 'r') as fp:
             params_dict = json.load(fp)
 
         A_scale_matrix = np.array(params_dict['A_scale_matrix'])
@@ -334,16 +341,16 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
     def __init__(
         self,
         D: int,
-        Z: np.array,
-        nu: int = None,
+        Z: npt.NDArray[np.float64],
+        nu: int | None = None,
         kernel: Kernel = gpflow.kernels.Matern52(),
         num_mc_samples: int = 5,
         scale_matrix_cholesky_option: str = 'train_full_matrix',
         train_additive_noise: bool = True,
         kernel_lengthscale_init: float = 0.3,
         q_sqrt_init: float = 0.001,
-        num_factors: int = None,
-        minibatch_size: int = None,
+        num_factors: int | None = None,
+        minibatch_size: int | None = None,
         verbose: bool = True,
     ) -> None:
         """
@@ -415,7 +422,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
 
     def predict_cov(
         self,
-        x_new: np.array,
+        x_new: npt.NDArray[np.float64],
         num_mc_samples: int = 300,
     ) -> tuple[tf.Tensor, tf.Tensor]:
         """
@@ -440,7 +447,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
 
     def predict_cov_samples(
         self,
-        x_new: np.array,
+        x_new: npt.NDArray[np.float64],
         num_mc_samples: int = 300,
     ) -> tf.Tensor:
         """
@@ -459,7 +466,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
 
     def predict_corr(
         self,
-        x_new: np.array,
+        x_new: npt.NDArray[np.float64],
         num_mc_samples: int = 300,
     ) -> tuple[tf.Tensor, tf.Tensor]:
         """
@@ -487,7 +494,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
 
     def _get_cov_samples(
         self,
-        x_new: np.array,
+        x_new: npt.NDArray[np.float64],
         num_mc_samples: int = 300,
     ) -> tf.Tensor:
         """
@@ -531,7 +538,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
 
         return affa
 
-    def scale_matrix(self):
+    def scale_matrix(self) -> tf.Tensor:
         return self.likelihood.A_scale_matrix * self.likelihood.A_scale_matrix.T
 
     def _initialize_parameters(
@@ -579,9 +586,9 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
             'q_mu': self.q_mu.numpy().tolist(),
             'q_sqrt': self.q_sqrt.numpy().tolist(),  # (D*nu, N, N) or (D*nu, Z, Z)
         }
-        if not os.path.exists(savedir):
-            os.makedirs(savedir)
-        with open(os.path.join(savedir, model_name), 'w') as fp:
+        savedir_path = Path(savedir)
+        savedir_path.mkdir(parents=True, exist_ok=True)
+        with open(savedir_path / model_name, 'w') as fp:
             json.dump(params_dict, fp)
         logging.info(f"Model '{model_name:s}' saved in '{savedir:s}'.")
 
@@ -599,7 +606,7 @@ class SparseVariationalWishartProcess(models.svgp.SVGP):
         :param savedir:
         :param model_name:
         """
-        with open(os.path.join(savedir, model_name), 'r') as fp:
+        with open(Path(savedir) / model_name, 'r') as fp:
             params_dict = json.load(fp)
 
         A_scale_matrix = np.array(params_dict['A_scale_matrix'])

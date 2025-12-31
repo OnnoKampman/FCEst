@@ -1,7 +1,7 @@
-# FCEst
+# FCEst: Python library for estimation of functional connectivity
 
-[![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint)
-[![Coverage](https://img.shields.io/badge/coverage-50%25-brightgreen)](coverage.xml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Coverage](https://img.shields.io/badge/coverage-46%25-brightgreen)](coverage.xml)
 
 `FCEst` is a package for estimating static and time-varying functional connectivity (TVFC) in Python.
 It includes a range of methods for this task, including Wishart processes, DCC and GO MGARCH models, and sliding windows.
@@ -19,7 +19,7 @@ $ pip install -e .
 ```
 
 ```zsh
-$ pip install git+https://github.com/OnnoKampman/FCEst.git@v0.1.0
+$ pip install git+https://github.com/OnnoKampman/FCEst.git@v0.1.1
 ```
 
 Make sure you have R installed and that `R_HOME` is set, for example by running `brew install r` on MacOS.
@@ -114,6 +114,27 @@ Additional model demonstrations can be found in Jupyter Notebooks under `.notebo
 
 FCEst is an open-source project and contributions from the community are more than welcome.
 Please raise an issue on Github or send me a message.
+
+## Citing FCEst
+
+If you used any of the code or inspiration from this repository, please consider citing our [Imaging Neuroscience article](https://direct.mit.edu/imag/article/doi/10.1162/imag_a_00184/121101/Time-varying-functional-connectivity-as-Wishart).
+Sample Bibtex is given below:
+```
+@ARTICLE{Kampman2024,
+  author = {Kampman, Onno P. and Ziminski, Joe and Afyouni, Soroosh and {van der Wilk}, Mark and Kourtzi, Zoe},
+    title = "{Time-varying functional connectivity as Wishart processes}",
+  journal = {Imaging Neuroscience},
+  year    = {2024},
+  volume  = {2},
+  number  = {2},
+  pages   = {1-45},
+  url     = {https://direct.mit.edu/imag/article/doi/10.1162/imag_a_00184/121101/Time-varying-functional-connectivity-as-Wishart}
+}
+```
+
+## References
+
+* [Multiverse analysis of functional connectivity estimation](https://github.com/mibur1/dfc-multiverse)
 
 ## Curated list of relevant papers
 

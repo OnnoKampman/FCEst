@@ -1,6 +1,6 @@
 name: Pytest
 
-# Run only on pushes to main branch and to pull requests into main branch.
+# Run Pytest only on pushes to main branch and to pull requests into main branch.
 on:
   push:
     branches: [ main ]
@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
     #   - name: Switch to Current Branch
         # run: git checkout ${{ env.BRANCH }}
@@ -22,7 +22,11 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+      - name: Install R
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y r-base r-base-dev
+      - name: Install Python and R dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r tests_requirements.txt
@@ -33,3 +37,9 @@ jobs:
       - name: Run unit tests
         run: |
           python -m pytest --cov=./fcest --cov-report=term --cov-report=xml --import-mode=append ./tests
+          echo "$(python -m pytest --cov=./fcest --cov-report=xml | grep -oP '(?<=<report\s+.*\s+line-rate=")\d+(\.\d+)?')"
+          # echo "$(pytest --cov=./fcest --cov-report=xml | grep -oP '(?<=<report\s+.*\s+line-rate=")\d+(\.\d+)?')" > coverage_percentage.txt
+
+      # - name: Set Coverage Percentage
+      #   id: set_coverage
+      #   run: echo "::set-output name=coverage::$(pytest --cov=./fcest --cov-report=xml | grep -oP '(?<=<report\s+.*\s+line-rate=")\d+(\.\d+)?')"

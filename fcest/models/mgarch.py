@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import logging
-import os
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
@@ -25,6 +27,11 @@ from rpy2.robjects.conversion import localconverter
 from ..helpers.array_operations import to_correlation_structure
 from ..helpers.data import to_3d_format
 
+if TYPE_CHECKING:
+    pass
+
+__all__ = ["MGARCH"]
+
 
 class MGARCH:
     """
@@ -32,11 +39,11 @@ class MGARCH:
     """
 
     def __init__(
-            self,
-            mgarch_type: str,
-            uspec_mean_model: str = "c(1, 1)",
-            uspec_variance_model: str = "c(1, 1)",
-            dccspec_order: str = "c(1, 1)",
+        self,
+        mgarch_type: str,
+        uspec_mean_model: str = "c(1, 1)",
+        uspec_variance_model: str = "c(1, 1)",
+        dccspec_order: str = "c(1, 1)",
     ) -> None:
         """
         You will need to run `install.packages('rmgarch')` in your R console.
@@ -158,19 +165,23 @@ class MGARCH:
         """
         self.mgarch = ro.r(r_go_garch_code)
 
-    def predict_corr(self) -> np.array:
+    def predict_corr(self) -> npt.NDArray[np.float64]:
         """
         Returns full TVFC correlation structure.
         """
         return self.train_location_covariance_structure
 
     def fit_model(
-            self,
-            training_data_y: np.array,
-            training_type: str = 'joint',
+        self,
+        training_data_y: npt.NDArray[np.float64],
+        training_type: str = 'joint',
     ) -> None:
         """
         Note that these MGARCH implementations require at least 100 time points to train.
+
+        If the MGARCH model does not converge for the multivariate version, we should abort.
+        However, the probability of this happening for one of the bivariate loop edges is substantial.
+        In that case we can skip that particular edge.
 
         Parameters
         ----------
@@ -192,9 +203,9 @@ class MGARCH:
                 raise NotImplementedError(f"Training type '{training_type:s}' not recognized.")
 
     def _fit_model_joint(
-            self,
-            training_data_y: np.array,
-    ):
+        self,
+        training_data_y: npt.NDArray[np.float64],
+    ) -> tuple[Any, npt.NDArray[np.float64]]:
         """
         Fit the MGARCH model to the training data jointly.
 
@@ -217,9 +228,9 @@ class MGARCH:
         return fit, train_location_covariance_structure
 
     def _fit_model_bivariate_loop(
-            self,
-            training_data_y: np.array,
-    ) -> np.array:
+        self,
+        training_data_y: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """
         Here we loop over all edges in pairwise fashion.
 
@@ -237,8 +248,11 @@ class MGARCH:
         interaction_pairs = list(zip(*interaction_pairs))  # list of interaction pairs
 
         # Train each bivariate pair and construct full covariance structure.
-        train_location_covariance_structure = np.zeros((num_time_steps, num_time_series, num_time_series))
+        train_location_covariance_structure = np.zeros(
+            (num_time_steps, num_time_series, num_time_series)
+        )
         for i_interaction_pair, (ts_i, ts_j) in enumerate(interaction_pairs):
+
             print(f"Edge {i_interaction_pair+1:d}/{len(interaction_pairs):d}.")
 
             bivariate_pair_df = pd.DataFrame(training_data_y).iloc[:, [ts_i, ts_j]]
@@ -278,15 +292,16 @@ class MGARCH:
             tlcs = to_correlation_structure(tlcs)
         tlcs_df = pd.DataFrame(tlcs.reshape(len(tlcs), -1).T)  # (D*D, N)
 
-        if not os.path.exists(savedir):
-            os.makedirs(savedir)
-        tlcs_df.to_csv(
-            os.path.join(savedir, model_name)
-        )
+        savedir_path = Path(savedir)
+        savedir_path.mkdir(parents=True, exist_ok=True)
+        tlcs_df.to_csv(savedir_path / model_name)
         logging.info(f"Saved MGARCH model (train location) estimates to '{savedir:s}'.")
 
     @staticmethod
-    def load_model_estimates(savedir: str, model_name: str) -> np.array:
+    def load_model_estimates(
+        savedir: str,
+        model_name: str,
+    ) -> npt.NDArray[np.float64]:
         """
         Load model TVFC estimates.
 
@@ -296,14 +311,14 @@ class MGARCH:
         :param model_name:
         :return:
         """
-        train_loc_cov_structure = pd.read_csv(os.path.join(savedir, model_name))  # (D*D, N)
+        train_loc_cov_structure = pd.read_csv(Path(savedir) / model_name)  # (D*D, N)
         train_loc_cov_structure = to_3d_format(train_loc_cov_structure)  # (N, D, D)
         return train_loc_cov_structure
 
     @staticmethod
     def _convert_to_r_df(
-        python_df: pd.DataFrame
-    ):
+        python_df: pd.DataFrame,
+    ) -> Any:
         """
         Convert a pandas DataFrame to an R DataFrame.
 
