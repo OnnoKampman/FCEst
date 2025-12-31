@@ -1,11 +1,18 @@
 import logging
-import os
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from sklearn.cluster import KMeans
 
 from fcest.helpers.array_operations import reconstruct_symmetric_matrix_from_tril
+
+if TYPE_CHECKING:
+    pass
+
+__all__ = ["BrainStatesExtractor"]
 
 
 class BrainStatesExtractor:
@@ -14,7 +21,7 @@ class BrainStatesExtractor:
         self,
         connectivity_metric: str,
         num_time_series: int,
-        tvfc_estimates: np.array,
+        tvfc_estimates: npt.NDArray[np.float64],
     ) -> None:
         """
         Class for extracting brain states from TVFC estimates.
@@ -36,7 +43,7 @@ class BrainStatesExtractor:
     def extract_brain_states(
         self,
         num_brain_states: int,
-    ):
+    ) -> tuple[float, pd.DataFrame, pd.DataFrame]:
         """
         Extract brain states from TVFC estimates.
 
@@ -53,7 +60,7 @@ class BrainStatesExtractor:
 
     def compute_basis_state(
         self,
-        all_subjects_tril_tvfc: np.array,
+        all_subjects_tril_tvfc: npt.NDArray[np.float64],
         num_basis_states: int,
         num_time_series: int,
         num_time_steps: int,
@@ -96,15 +103,12 @@ class BrainStatesExtractor:
         )
 
         # Save clusters (i.e. brain states) to file.
-        if not os.path.exists(brain_states_savedir):
-            os.makedirs(brain_states_savedir)
+        brain_states_path = Path(brain_states_savedir)
+        brain_states_path.mkdir(parents=True, exist_ok=True)
         for i_cluster, cluster_centroid in enumerate(cluster_centers):
             cluster_df = pd.DataFrame(cluster_centroid)  # (D, D)
             cluster_df.to_csv(
-                os.path.join(
-                    brain_states_savedir,
-                    f'{self.connectivity_metric:s}_brain_state_{i_cluster:d}.csv'
-                ),
+                brain_states_path / f'{self.connectivity_metric:s}_brain_state_{i_cluster:d}.csv',
                 float_format='%.2f',
             )
             logging.info(f"Brain state saved in '{brain_states_savedir:s}'.")
@@ -126,7 +130,11 @@ class BrainStatesExtractor:
 
         return kmeans.inertia_, all_subjects_brain_state_assignments_df, all_subjects_dwell_times_df
 
-    def _get_cluster_centroids(self, kmeans: KMeans, num_time_series: int) -> np.array:
+    def _get_cluster_centroids(
+        self,
+        kmeans: KMeans,
+        num_time_series: int,
+    ) -> npt.NDArray[np.float64]:
         """
         Get cluster centroids (centers) from k-means clustering.
         """
@@ -141,7 +149,10 @@ class BrainStatesExtractor:
 
         return cluster_centers
 
-    def _sort_cluster_centers(self, cluster_centers: np.array) -> np.array:
+    def _sort_cluster_centers(
+        self,
+        cluster_centers: npt.NDArray[np.float64],
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.int64]]:
 
         # Re-order clusters based on high to low (descending) 'contrast' - higher contrast states are more interesting.
         cluster_contrasts = np.var(cluster_centers, axis=(1, 2))  # (num_clusters, )
@@ -153,7 +164,7 @@ class BrainStatesExtractor:
 
     def _get_brain_state_assignments(
         self,
-        labels,
+        labels: npt.NDArray[np.int32],
         num_time_steps: int,
     ) -> pd.DataFrame:
         """
