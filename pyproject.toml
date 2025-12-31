@@ -24,6 +24,7 @@ dependencies = [
     "gpflow==2.10.0",
     "ipykernel",
     "matplotlib",
+    "networkx",
     "numpy",
     "pandas==1.5.3",
     "rpy2==3.4.5",
