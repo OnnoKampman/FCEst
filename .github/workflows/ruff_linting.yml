@@ -1,6 +1,6 @@
-name: Ruff linting
+name: Code quality (Ruff)
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install gpflow==2.10.0 numpy pandas==1.5.3 rpy2==3.4.5 ruff scipy statsmodels
+          pip install ruff
       - name: Analyzing the code with Ruff
         run: |
           ruff check . --exit-zero
